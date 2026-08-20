@@ -251,9 +251,9 @@ export default function CalendarView({ onSelectEvent }) {
                   onClick={() => setSelectedDateStr(item.dateStr)}
                   className={`group relative h-11 sm:h-13 flex flex-col items-center justify-between p-1 sm:p-1.5 transition-all duration-150 select-none ${
                     isSelected
-                      ? 'bg-[#0B0C0E] text-white font-bold z-10'
+                      ? 'bg-[#F6821F] text-white font-bold z-10 shadow-sm'
                       : isToday
-                      ? 'bg-[#FFF5EA] text-[#DB6E0F] font-bold'
+                      ? 'bg-[#FFF5EA] text-[#DB6E0F] font-bold ring-1 ring-inset ring-[#FBD6B0]'
                       : isOther
                       ? 'bg-[#FAFAFA] hover:bg-[#F3F4F6] text-[#9CA3AF]'
                       : 'bg-white hover:bg-[#F9FAFB] text-[#0B0C0E]'
