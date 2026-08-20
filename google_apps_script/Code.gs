@@ -79,6 +79,9 @@ function doGet(e) {
       case 'getConfig':
         result = handleGetConfig();
         break;
+      case 'getPushSubscribers':
+        result = handleGetPushSubscribers();
+        break;
       case 'initSheets':
         result = { success: true, message: 'Sheet berhasil diinisialisasi!', data: null };
         break;
@@ -718,4 +721,27 @@ function handleSavePushSubscription(subscription, userAgent) {
   sheet.appendRow([endpoint, authKey, p256dhKey, userAgent || '', new Date().toISOString(), 'Active']);
   return { success: true, message: 'Push subscription baru berhasil didaftarkan di database.' };
 }
+
+function handleGetPushSubscribers() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('PushSubscribers');
+  if (!sheet || sheet.getLastRow() <= 1) {
+    return { success: true, data: [] };
+  }
+  const values = sheet.getDataRange().getValues();
+  const subscribers = [];
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0] && values[i][5] === 'Active') {
+      subscribers.push({
+        endpoint: values[i][0],
+        keys: {
+          auth: values[i][1],
+          p256dh: values[i][2]
+        }
+      });
+    }
+  }
+  return { success: true, data: subscribers };
+}
+
 
