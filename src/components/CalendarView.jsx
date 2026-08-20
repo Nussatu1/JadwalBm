@@ -5,13 +5,23 @@ import {
   Calendar as CalendarIcon, 
   Clock, 
   MapPin, 
-  ChevronRight as ChevronRightIcon
+  Users,
+  ChevronRight as ChevronRightIcon,
+  Sparkles
 } from 'lucide-react';
-import { NAMA_BULAN, formatTanggalIndo, formatJam, parseAnyDate } from '../utils/dateUtils';
+import { NAMA_BULAN, formatTanggalIndo, cleanTimeString, parseAnyDate } from '../utils/dateUtils';
 import { useEvents } from '../context/EventContext';
 import StatusBadge from './StatusBadge';
 
-const HARI_SINGKAT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const HARI_SINGKAT = [
+  { name: 'Min', label: 'Minggu', isWeekend: true },
+  { name: 'Sen', label: 'Senin' },
+  { name: 'Sel', label: 'Selasa' },
+  { name: 'Rab', label: 'Rabu' },
+  { name: 'Kam', label: 'Kamis' },
+  { name: 'Jum', label: 'Jumat', isSpecial: true },
+  { name: 'Sab', label: 'Sabtu' }
+];
 
 export default function CalendarView({ onSelectEvent }) {
   const { events } = useEvents();
@@ -48,6 +58,7 @@ export default function CalendarView({ onSelectEvent }) {
     setSelectedDateStr(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
   };
 
+  // Group events by normalized YYYY-MM-DD
   const eventsByDate = useMemo(() => {
     const map = {};
     events.forEach(e => {
@@ -62,6 +73,20 @@ export default function CalendarView({ onSelectEvent }) {
     });
     return map;
   }, [events]);
+
+  // Total events in the currently viewed month
+  const totalEventsInMonth = useMemo(() => {
+    let count = 0;
+    events.forEach(e => {
+      if (e.tanggal) {
+        const d = parseAnyDate(e.tanggal);
+        if (d && d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
+          count++;
+        }
+      }
+    });
+    return count;
+  }, [events, currentYear, currentMonth]);
 
   const daysInMonth = useMemo(() => {
     const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
@@ -94,162 +119,272 @@ export default function CalendarView({ onSelectEvent }) {
   }, [eventsByDate, selectedDateStr]);
 
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const isViewingCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
 
   return (
-    <div className="space-y-3">
-      {/* Calendar Card */}
-      <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-4 shadow-cf-card">
-        {/* Month Header Navigation */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-[16px] font-semibold text-[#0B0C0E]">
-              {NAMA_BULAN[currentMonth]} {currentYear}
-            </h2>
-            <button
-              onClick={handleToday}
-              className="text-[12px] font-medium px-2 py-0.5 bg-[#F6F6F7] hover:bg-[#E5E7EB] text-[#374151] border border-[#E5E7EB] rounded-[4px] transition-colors"
-            >
-              Hari Ini
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handlePrevMonth}
-              aria-label="Bulan Sebelumnya"
-              className="w-8 h-8 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-[#F6F6F7] border border-[#E5E7EB] rounded-[6px] transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleNextMonth}
-              aria-label="Bulan Berikutnya"
-              className="w-8 h-8 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-[#F6F6F7] border border-[#E5E7EB] rounded-[6px] transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Days of Week Header */}
-        <div className="grid grid-cols-7 gap-1 text-center mb-1">
-          {HARI_SINGKAT.map((h, idx) => (
-            <div
-              key={idx}
-              className={`text-[11px] font-medium py-1 ${
-                idx === 0 ? 'text-[#E5484D]' : 'text-[#6B7280]'
-              }`}
-            >
-              {h}
+    <div className="space-y-3.5">
+      {/* ── Main Calendar Card ── */}
+      <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden">
+        {/* Header: Month & Year Navigator */}
+        <div className="p-4 pb-3 flex items-center justify-between border-b border-[#E5E7EB]/60 bg-gradient-to-b from-[#FAFAFA] to-white">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-[17px] font-bold text-[#0B0C0E] tracking-tight">
+                {NAMA_BULAN[currentMonth]}
+              </h2>
+              <span className="text-[15px] font-medium text-[#6B7280]">
+                {currentYear}
+              </span>
             </div>
-          ))}
+
+            {totalEventsInMonth > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#FFF5EA] text-[#DB6E0F] border border-[#FBD6B0]">
+                <Sparkles className="w-2.5 h-2.5" />
+                <span>{totalEventsInMonth} Agenda</span>
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {!isViewingCurrentMonth && (
+              <button
+                type="button"
+                onClick={handleToday}
+                className="text-[11.5px] font-medium px-2.5 py-1 bg-white hover:bg-[#F6F6F7] text-[#0B0C0E] border border-[#E5E7EB] rounded-[6px] transition-all shadow-2xs"
+              >
+                Hari Ini
+              </button>
+            )}
+
+            <div className="flex items-center bg-[#F6F6F7] p-0.5 rounded-[7px] border border-[#E5E7EB]">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                aria-label="Bulan Sebelumnya"
+                className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-white rounded-[5px] transition-all shadow-2xs"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                aria-label="Bulan Berikutnya"
+                className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-white rounded-[5px] transition-all shadow-2xs"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1">
-          {daysInMonth.map((item, idx) => {
-            if (!item.day) {
-              return <div key={`empty-${idx}`} className="h-10 sm:h-12 rounded-[6px]" />;
-            }
-
-            const isToday = item.dateStr === todayStr;
-            const isSelected = item.dateStr === selectedDateStr;
-            const hasEvents = item.hasEvents;
-
-            return (
-              <button
-                key={item.dateStr}
-                onClick={() => setSelectedDateStr(item.dateStr)}
-                className={`relative h-10 sm:h-12 rounded-[6px] flex flex-col items-center justify-center p-1 transition-colors border ${
-                  isSelected
-                    ? 'bg-[#F6821F] border-[#F6821F] text-white font-semibold'
-                    : isToday
-                    ? 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-semibold'
-                    : 'bg-white hover:bg-[#F6F6F7] border-[#E5E7EB] text-[#0B0C0E]'
+        {/* Days of Week Subheader Bar */}
+        <div className="px-3 pt-3">
+          <div className="grid grid-cols-7 gap-1 text-center bg-[#F9FAFB] rounded-[7px] py-1.5 border border-[#F3F4F6]">
+            {HARI_SINGKAT.map((h, idx) => (
+              <div
+                key={idx}
+                className={`text-[11px] font-semibold tracking-wider uppercase ${
+                  h.isWeekend
+                    ? 'text-[#E5484D]'
+                    : h.isSpecial
+                    ? 'text-[#0F9D58]'
+                    : 'text-[#6B7280]'
                 }`}
               >
-                <span className="text-[12px] sm:text-[13px]">{item.day}</span>
+                {h.name}
+              </div>
+            ))}
+          </div>
+        </div>
 
-                {/* Event Dots */}
-                {hasEvents && (
-                  <div className="flex items-center gap-0.5 mt-0.5">
-                    {item.events.slice(0, 3).map((ev, eIdx) => {
-                      let dotColor = isSelected ? 'bg-white' : 'bg-[#F6821F]';
-                      if (ev.status === 'Berlangsung') dotColor = isSelected ? 'bg-white' : 'bg-[#F6C000]';
-                      if (ev.status === 'Batal') dotColor = isSelected ? 'bg-white' : 'bg-[#E5484D]';
+        {/* Calendar Dates Grid */}
+        <div className="p-3 pt-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+            {daysInMonth.map((item, idx) => {
+              if (!item.day) {
+                return (
+                  <div 
+                    key={`empty-${idx}`} 
+                    className="h-11 sm:h-13 rounded-[7px] bg-transparent opacity-0 pointer-events-none" 
+                  />
+                );
+              }
 
-                      return (
-                        <span
-                          key={eIdx}
-                          className={`w-1 h-1 rounded-full ${dotColor}`}
-                        />
-                      );
-                    })}
+              const isToday = item.dateStr === todayStr;
+              const isSelected = item.dateStr === selectedDateStr;
+              const hasEvents = item.hasEvents;
+              const dayOfWeek = new Date(currentYear, currentMonth, item.day).getDay();
+              const isSunday = dayOfWeek === 0;
+
+              return (
+                <button
+                  type="button"
+                  key={item.dateStr}
+                  onClick={() => setSelectedDateStr(item.dateStr)}
+                  className={`group relative h-11 sm:h-13 rounded-[8px] flex flex-col items-center justify-between p-1 sm:p-1.5 transition-all duration-150 border select-none ${
+                    isSelected
+                      ? 'bg-[#0B0C0E] border-[#0B0C0E] text-white font-bold shadow-md shadow-black/10 scale-[1.02] z-10'
+                      : isToday
+                      ? 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-bold ring-1 ring-[#F6821F]/40'
+                      : hasEvents
+                      ? 'bg-white hover:bg-[#F9FAFB] border-[#E5E7EB] text-[#0B0C0E] hover:border-[#D1D5DB]'
+                      : 'bg-white hover:bg-[#F9FAFB] border-transparent hover:border-[#E5E7EB] text-[#374151]'
+                  }`}
+                >
+                  {/* Date Number */}
+                  <span className={`text-[12px] sm:text-[13px] leading-none mt-0.5 ${
+                    isSelected
+                      ? 'text-white font-bold'
+                      : isToday
+                      ? 'text-[#DB6E0F] font-bold'
+                      : isSunday
+                      ? 'text-[#E5484D]'
+                      : 'text-[#0B0C0E]'
+                  }`}>
+                    {item.day}
+                  </span>
+
+                  {/* Event Indicator Pills / Dots */}
+                  <div className="w-full flex items-center justify-center gap-0.5 min-h-[5px] mb-0.5">
+                    {hasEvents && (
+                      <div className="flex items-center gap-0.5">
+                        {item.events.slice(0, 3).map((ev, eIdx) => {
+                          let dotBg = isSelected
+                            ? 'bg-white'
+                            : ev.status === 'Berlangsung'
+                            ? 'bg-[#F59E0B]'
+                            : ev.status === 'Batal'
+                            ? 'bg-[#E5484D]'
+                            : ev.status === 'Selesai'
+                            ? 'bg-[#0F9D58]'
+                            : 'bg-[#F6821F]';
+
+                          return (
+                            <span
+                              key={eIdx}
+                              className={`w-1.5 h-1.5 rounded-full transition-transform group-hover:scale-125 ${dotBg}`}
+                            />
+                          );
+                        })}
+                        {item.events.length > 3 && (
+                          <span className={`text-[8px] font-bold leading-none ${isSelected ? 'text-white' : 'text-[#6B7280]'}`}>
+                            +
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Selected Date Events List */}
-      <div className="space-y-2">
+      {/* ── Selected Date Agenda Section ── */}
+      <div className="space-y-2.5">
+        {/* Section Header with Date Badge */}
         <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0B0C0E]">
-            <CalendarIcon className="w-4 h-4 text-[#F6821F]" />
-            <span>{formatTanggalIndo(selectedDateStr)}</span>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-[6px] bg-[#F6F6F7] border border-[#E5E7EB] flex items-center justify-center text-[#F6821F] shrink-0">
+              <CalendarIcon className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <h3 className="text-[13.5px] font-bold text-[#0B0C0E] leading-tight">
+                {formatTanggalIndo(selectedDateStr)}
+              </h3>
+              {selectedDateStr === todayStr && (
+                <span className="text-[10.5px] font-semibold text-[#F6821F] uppercase tracking-wider">
+                  Hari Ini
+                </span>
+              )}
+            </div>
           </div>
-          <span className="text-[11px] font-medium px-2 py-0.5 bg-[#F6F6F7] text-[#6B7280] border border-[#E5E7EB] rounded-full">
-            {selectedDayEvents.length} Acara
+
+          <span className="text-[11px] font-semibold px-2.5 py-0.5 bg-[#F6F6F7] text-[#4B5563] border border-[#E5E7EB] rounded-full">
+            {selectedDayEvents.length} Agenda
           </span>
         </div>
 
+        {/* Event Cards List */}
         {selectedDayEvents.length === 0 ? (
-          <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-6 text-center">
-            <p className="text-[13px] text-[#6B7280]">
-              Tidak ada agenda acara pada tanggal ini.
-            </p>
+          <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-7 text-center space-y-2 shadow-cf-card">
+            <div className="w-10 h-10 rounded-full bg-[#F6F6F7] border border-[#E5E7EB] text-[#9CA3AF] flex items-center justify-center mx-auto">
+              <CalendarIcon className="w-4 h-4" />
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-[13px] font-semibold text-[#0B0C0E]">
+                Tidak Ada Agenda
+              </p>
+              <p className="text-[11.5px] text-[#6B7280]">
+                Belum ada jadwal liputan pada tanggal ini.
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="space-y-1.5">
-            {selectedDayEvents.map(event => (
-              <div
-                key={event.id}
-                onClick={() => onSelectEvent && onSelectEvent(event)}
-                className="bg-white rounded-[6px] border border-[#E5E7EB] px-3.5 py-2.5 hover:border-[#D1D5DB] active:bg-[#F6F6F7] cursor-pointer transition-all flex items-center justify-between gap-3 group"
-              >
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                    <h4 className="text-[14px] font-semibold text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors truncate">
-                      {event.nama_acara}
-                    </h4>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {event.kategori && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-[#6B7280] bg-[#F6F6F7] border border-[#E5E7EB]">
-                          {event.kategori}
-                        </span>
+          <div className="space-y-2">
+            {selectedDayEvents.map(event => {
+              const startTime = cleanTimeString(event.jam_mulai);
+              const endTime = cleanTimeString(event.jam_selesai);
+              const isLive = event.status === 'Berlangsung';
+
+              return (
+                <div
+                  key={event.id}
+                  onClick={() => onSelectEvent && onSelectEvent(event)}
+                  className={`bg-white rounded-[8px] border p-3.5 hover:border-[#D1D5DB] active:bg-[#F9FAFB] cursor-pointer transition-all flex items-center justify-between gap-3 group shadow-cf-card ${
+                    isLive 
+                      ? 'border-l-4 border-l-[#F59E0B] border-t-[#E5E7EB] border-r-[#E5E7EB] border-b-[#E5E7EB]' 
+                      : 'border-l-4 border-l-[#F6821F] border-t-[#E5E7EB] border-r-[#E5E7EB] border-b-[#E5E7EB]'
+                  }`}
+                >
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    {/* Title & Status */}
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-[14px] font-semibold text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors truncate">
+                        {event.nama_acara}
+                      </h4>
+                      <div className="shrink-0 flex items-center gap-1.5">
+                        {event.kategori && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.2 rounded text-[#4B5563] bg-[#F6F6F7] border border-[#E5E7EB]">
+                            {event.kategori}
+                          </span>
+                        )}
+                        <StatusBadge status={event.status} />
+                      </div>
+                    </div>
+
+                    {/* Time & Location Row */}
+                    <div className="flex items-center gap-3 text-[12px] text-[#6B7280] flex-wrap">
+                      <div className="flex items-center gap-1 shrink-0 text-[#374151] font-medium">
+                        <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                        <span>{startTime ? `${startTime}${endTime ? ' - ' + endTime : ''} WIB` : 'Waktu menyusul'}</span>
+                      </div>
+
+                      {event.lokasi_nama && (
+                        <div className="flex items-center gap-1 truncate text-[#4B5563]">
+                          <MapPin className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                          <span className="truncate">{event.lokasi_nama}</span>
+                        </div>
                       )}
-                      <StatusBadge status={event.status} />
+
+                      {event.anggota_diutus && (
+                        <div className="flex items-center gap-1 text-[11px] text-[#6B7280] truncate">
+                          <Users className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                          <span className="truncate">
+                            {event.anggota_diutus.split(',').length} Petugas
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-[12px] text-[#6B7280] truncate">
-                    <span className="shrink-0">{event.jam_mulai ? `${event.jam_mulai} WIB` : 'Waktu menyusul'}</span>
-                    {event.lokasi_nama && (
-                      <>
-                        <span className="text-[#D1D5DB]">•</span>
-                        <span className="truncate text-[#4B5563]">{event.lokasi_nama}</span>
-                      </>
-                    )}
+                  <div className="shrink-0 text-[#9CA3AF] group-hover:text-[#0B0C0E] group-hover:translate-x-0.5 transition-all">
+                    <ChevronRightIcon className="w-4 h-4" />
                   </div>
                 </div>
-
-                <div className="shrink-0 text-[#9CA3AF] group-hover:text-[#0B0C0E] transition-colors">
-                  <ChevronRightIcon className="w-4 h-4" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
