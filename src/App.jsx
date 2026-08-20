@@ -44,10 +44,13 @@ export default function App() {
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Auto-register Push Subscription if permission is already granted
+  // Auto-register Push Subscription if permission is already granted (with brief settle delay)
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      subscribeUserToPush();
+      const timer = setTimeout(() => {
+        subscribeUserToPush().catch(() => {});
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, []);
 
