@@ -1,10 +1,16 @@
 /**
- * Web Push & Background Notification Service for Jadwal Bakid Multimedia
- * Handles permission, custom audio (/notif.mp3), and background checks.
+ * Notification Service — Jadwal Bakid Multimedia
+ *
+ * Menangani:
+ * - Push Subscription (daftarkan HP ke FCM via VAPID)
+ * - In-app audio notifikasi kustom (notif.mp3)
+ * - Pengecekan jadwal berkala (H-1, mulai, selesai)
+ * - Listener pesan dari Service Worker (PUSH_RECEIVED)
  */
 
 import { parseAnyDate, cleanTimeString, getTodayString } from './dateUtils';
 
+// ─── Konstanta ────────────────────────────────────────────────────────────────
 const STORAGE_KEYS = {
   SETTINGS: 'bakid_notif_settings',
   SENT_LOG: 'bakid_sent_notifications_log'
@@ -18,40 +24,41 @@ export const DEFAULT_NOTIF_SETTINGS = {
   notifyEventEnd: true
 };
 
-export const VAPID_PUBLIC_KEY = 'BLjGf9tE-tULNS-2Do6COan2IrUi2YNDMnjB4AkrSyK7Mw8I2b7nW0UKwC91LvNQh5BI5_JKviMZ3pQUysDsOSg';
+export const VAPID_PUBLIC_KEY =
+  'BLjGf9tE-tULNS-2Do6COan2IrUi2YNDMnjB4AkrSyK7Mw8I2b7nW0UKwC91LvNQh5BI5_JKviMZ3pQUysDsOSg';
 
+// ─── Helper: decode VAPID public key ─────────────────────────────────────────
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    output[i] = rawData.charCodeAt(i);
   }
-  return outputArray;
+  return output;
 }
 
+// ─── Push Subscription ────────────────────────────────────────────────────────
+/**
+ * Daftarkan HP ini ke FCM Web Push dan simpan token ke server.
+ * Hanya berjalan di HP Android/iOS — Chrome PC sering gagal (AbortError).
+ */
 export async function subscribeUserToPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    return { success: false, message: 'Push Manager tidak didukung di browser ini' };
+    return { success: false, message: 'Push Manager tidak didukung di browser ini.' };
   }
-  try {
-    // 1. Pastikan Service Worker sudah siap dan aktif
-    let reg = await navigator.serviceWorker.ready;
-    if (!reg) {
-      reg = await navigator.serviceWorker.register('/sw.js');
-      reg = await navigator.serviceWorker.ready;
-    }
 
-    if (!reg || !reg.pushManager) {
-      return { success: false, message: 'PushManager tidak tersedia di Service Worker' };
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (!reg?.pushManager) {
+      return { success: false, message: 'PushManager tidak tersedia di Service Worker.' };
     }
 
     const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
 
-    // 2. Ambil subscription yang ada atau buat baru
+    // Ambil subscription lama atau buat baru
     let subscription = await reg.pushManager.getSubscription();
-
     if (!subscription) {
       subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -59,8 +66,9 @@ export async function subscribeUserToPush() {
       });
     }
 
-    // 3. Serialisasi dan kirim token ke server Cloudflare & Google Sheets
-    const subJson = subscription.toJSON ? subscription.toJSON() : JSON.parse(JSON.stringify(subscription));
+    const subJson = subscription.toJSON
+      ? subscription.toJSON()
+      : JSON.parse(JSON.stringify(subscription));
 
     const res = await fetch('/api/push?action=subscribe', {
       method: 'POST',
@@ -69,28 +77,27 @@ export async function subscribeUserToPush() {
     });
 
     const resData = await res.json().catch(() => ({ success: true }));
-    console.log('Push subscription tersinkronkan ke server:', resData);
-
+    console.log('[Push] Subscription synced:', resData.message);
     return { success: true, subscription: subJson, data: resData };
+
   } catch (e) {
-    // AbortError di browser PC/Laptop adalah keterbatasan Chrome Desktop (bukan bug kode)
-    // Push subscription hanya berfungsi penuh di HP Android/iOS
+    // AbortError/NotSupportedError = Chrome PC tanpa Google Push Service aktif
     if (e.name === 'AbortError' || e.name === 'NotSupportedError') {
-      console.info('[Push] Tidak dapat mendaftar push di browser ini (Chrome PC tanpa sesi Google aktif):', e.message);
+      console.info('[Push] Tidak tersedia di browser ini:', e.message);
       return {
         success: false,
-        message: 'Push notification tidak tersedia di browser PC ini. Gunakan Chrome di HP Android untuk mendaftar notifikasi push.'
+        message: 'Push notification hanya tersedia di Chrome HP Android. Browser PC tidak didukung.'
       };
     }
-    console.warn('subscribeUserToPush:', e.name, e.message);
-    return {
-      success: false,
-      message: e.message
-    };
+    console.warn('[Push] subscribeUserToPush error:', e.name, e.message);
+    return { success: false, message: e.message };
   }
 }
 
-
+// ─── Broadcast Test ───────────────────────────────────────────────────────────
+/**
+ * Kirim push notifikasi ke semua perangkat yang terdaftar via Cloudflare.
+ */
 export async function broadcastTestNotificationToAll(title, body) {
   try {
     const res = await fetch('/api/push?action=broadcast', {
@@ -101,79 +108,100 @@ export async function broadcastTestNotificationToAll(title, body) {
         body: body || 'Uji coba transmisi notifikasi serentak ke seluruh tim multimedia berhasil!'
       })
     });
-    const json = await res.json();
-    return json;
+    return await res.json();
   } catch (e) {
     return { success: false, message: e.message };
   }
 }
 
-let sharedAudio = null;
-let isAudioUnlocked = false;
+// ─── Audio Kustom ─────────────────────────────────────────────────────────────
+// Singleton Audio instance — unlock sekali, pakai terus
+let _audio = null;
+let _audioUnlocked = false;
 
 /**
- * Prime & unlock Audio on the first user interaction (touch/click)
- * Required by Mobile Safari & Chrome autoplay security policies.
+ * Unlock audio pipeline pada interaksi pertama pengguna.
+ * Dipanggil SEKALI saja dari App.jsx.
  */
 export function initAudioUnlock() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || _audioUnlocked) return;
 
   const unlock = () => {
     try {
-      if (!sharedAudio) {
-        sharedAudio = new Audio('/notif.mp3');
-        sharedAudio.volume = 1.0;
-        sharedAudio.preload = 'auto';
+      if (!_audio) {
+        _audio = new Audio('/notif.mp3');
+        _audio.volume = 1.0;
+        _audio.preload = 'auto';
       }
-      // Play and immediately pause to unlock browser audio pipeline
-      sharedAudio.play().then(() => {
-        sharedAudio.pause();
-        sharedAudio.currentTime = 0;
-        isAudioUnlocked = true;
-      }).catch(() => {
-        // Will unlock on next interaction
-      });
-    } catch (e) {}
-
-    window.removeEventListener('click', unlock);
-    window.removeEventListener('touchstart', unlock);
+      _audio.play()
+        .then(() => {
+          _audio.pause();
+          _audio.currentTime = 0;
+          _audioUnlocked = true;
+        })
+        .catch(() => {}); // Akan coba ulang di interaksi berikutnya
+    } catch (_) {}
   };
 
   window.addEventListener('click', unlock, { once: true });
-  window.addEventListener('touchstart', unlock, { once: true });
+  window.addEventListener('touchstart', unlock, { once: true, passive: true });
 }
 
-// Auto-register audio unlock on module load
-if (typeof window !== 'undefined') {
-  initAudioUnlock();
-}
-
+/**
+ * Mainkan notif.mp3 — hanya berfungsi saat app terbuka (tab aktif).
+ */
 export function playCustomAudioNotification() {
   try {
-    if (!sharedAudio) {
-      sharedAudio = new Audio('/notif.mp3');
-      sharedAudio.volume = 1.0;
+    if (!_audio) {
+      _audio = new Audio('/notif.mp3');
+      _audio.volume = 1.0;
     }
-    sharedAudio.currentTime = 0;
-    const playPromise = sharedAudio.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((e) => {
-        console.warn('Audio play prevented by browser autoplay policy:', e);
-      });
-    }
+    _audio.currentTime = 0;
+    _audio.play().catch((e) => {
+      console.info('[Audio] Autoplay blocked (expected):', e.message);
+    });
     return true;
   } catch (e) {
-    console.error('Failed to play notification audio:', e);
+    console.warn('[Audio] playCustomAudioNotification error:', e);
     return false;
   }
 }
 
+// ─── Listener untuk pesan dari Service Worker ─────────────────────────────────
+/**
+ * Saat SW menerima push sementara app terbuka, SW mengirim pesan PUSH_RECEIVED.
+ * Di sini kita tangkap dan mainkan custom audio + tampilkan in-app banner.
+ */
+export function registerSWMessageListener() {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'PUSH_RECEIVED') {
+      // App sedang terbuka → mainkan audio kustom
+      playCustomAudioNotification();
+
+      // Dispatch in-app notification event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('in-app-notification', {
+          detail: {
+            title: event.data.title,
+            body: event.data.body
+          }
+        }));
+      }
+    }
+  });
+}
+
+// ─── Pengaturan Notifikasi ────────────────────────────────────────────────────
 export function getNotificationSettings() {
   try {
     const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return saved ? { ...DEFAULT_NOTIF_SETTINGS, ...JSON.parse(saved) } : DEFAULT_NOTIF_SETTINGS;
-  } catch (e) {
-    return DEFAULT_NOTIF_SETTINGS;
+    return saved
+      ? { ...DEFAULT_NOTIF_SETTINGS, ...JSON.parse(saved) }
+      : { ...DEFAULT_NOTIF_SETTINGS };
+  } catch (_) {
+    return { ...DEFAULT_NOTIF_SETTINGS };
   }
 }
 
@@ -181,92 +209,81 @@ export function saveNotificationSettings(settings) {
   try {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   } catch (e) {
-    console.error('Failed to save notification settings:', e);
+    console.warn('[Notif] Gagal simpan settings:', e);
   }
 }
 
+// ─── Izin Notifikasi ──────────────────────────────────────────────────────────
 export async function requestNotificationPermission() {
   if (!('Notification' in window)) {
     return { supported: false, granted: false, status: 'unsupported' };
   }
-
   if (Notification.permission === 'granted') {
     return { supported: true, granted: true, status: 'granted' };
   }
-
   try {
     const permission = await Notification.requestPermission();
-    return {
-      supported: true,
-      granted: permission === 'granted',
-      status: permission
-    };
-  } catch (e) {
+    return { supported: true, granted: permission === 'granted', status: permission };
+  } catch (_) {
     return { supported: true, granted: false, status: 'denied' };
   }
 }
 
+// ─── System Notification (saat app terbuka) ───────────────────────────────────
+/**
+ * Tampilkan notifikasi sistem + audio + in-app banner saat app aktif.
+ * Untuk push dari luar (app tertutup) ditangani oleh Service Worker.
+ */
 export async function showSystemNotification(title, body, options = {}) {
-  const settings = getNotificationSettings();
-
-  // 1. Play custom audio
+  // 1. Audio kustom
   playCustomAudioNotification();
 
-  // 2. Dispatch in-app visual notification event (for active window)
+  // 2. In-app visual banner
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('in-app-notification', {
       detail: { title, body, tag: options.tag }
     }));
   }
 
-  // 3. Check browser notification permission
-  if (!('Notification' in window) || Notification.permission !== 'granted') {
-    return false;
-  }
+  // 3. OS notification (perlu izin)
+  if (!('Notification' in window) || Notification.permission !== 'granted') return false;
 
   const notifOptions = {
     body,
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png',
-    vibrate: [300, 100, 300, 100, 300],
-    silent: false,
-    tag: options.tag || 'bakid-notif-' + Date.now(),
+    vibrate: [200, 100, 200, 100, 400],
+    silent: true, // audio sudah diputar manual di atas
+    tag: options.tag || 'bakid-' + Date.now(),
     renotify: true,
-    data: options.data || {},
-    ...options
+    data: options.data || {}
   };
 
-  // Method A: Always try Service Worker Registration (Required on Android / Chrome Mobile)
-  if ('serviceWorker' in navigator) {
-    try {
-      let reg = await navigator.serviceWorker.getRegistration();
-      if (!reg) {
-        reg = await navigator.serviceWorker.register('/sw.js');
-      }
-      if (reg) {
-        await reg.showNotification(title, notifOptions);
-        return true;
-      }
-    } catch (e) {
-      console.warn('Service worker showNotification failed, trying fallback:', e);
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      await reg.showNotification(title, notifOptions);
+      return true;
     }
+  } catch (e) {
+    console.warn('[Notif] SW showNotification gagal:', e);
   }
 
-  // Method B: Standard Notification API (Desktop Safari/Firefox)
+  // Fallback: Notification API langsung (Desktop Safari/Firefox)
   try {
     new Notification(title, notifOptions);
     return true;
-  } catch (e) {
-    console.warn('Standard Notification fallback error:', e);
+  } catch (_) {
     return false;
   }
 }
 
+// ─── Log Notifikasi Terkirim ──────────────────────────────────────────────────
 function getSentLog() {
   try {
     const log = localStorage.getItem(STORAGE_KEYS.SENT_LOG);
     return log ? JSON.parse(log) : {};
-  } catch (e) {
+  } catch (_) {
     return {};
   }
 }
@@ -276,20 +293,24 @@ function markSent(notifKey) {
     const log = getSentLog();
     log[notifKey] = Date.now();
     localStorage.setItem(STORAGE_KEYS.SENT_LOG, JSON.stringify(log));
-  } catch (e) {}
+  } catch (_) {}
 }
 
+// ─── Pengecekan Jadwal Berkala ────────────────────────────────────────────────
 /**
- * Check all events and trigger push notifications based on settings
+ * Periksa semua acara dan kirim notifikasi lokal berdasarkan waktu.
+ * Dipanggil setiap 60 detik dari App.jsx via setInterval.
  */
 export function checkAndTriggerEventNotifications(events) {
-  if (!events || !events.length) return;
+  if (!events?.length) return;
+
   const settings = getNotificationSettings();
   if (!settings.enabled || Notification.permission !== 'granted') return;
 
   const now = new Date();
   const todayStr = getTodayString();
   const sentLog = getSentLog();
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
   events.forEach((event) => {
     if (!event.tanggal || event.status === 'Batal') return;
@@ -301,66 +322,62 @@ export function checkAndTriggerEventNotifications(events) {
     const startClean = cleanTimeString(event.jam_mulai);
     const endClean = cleanTimeString(event.jam_selesai);
 
-    // Calculate Day Difference
-    const oneDayMs = 24 * 60 * 60 * 1000;
     const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const eventZero = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-    const diffDays = Math.round((eventZero - todayZero) / oneDayMs);
+    const diffDays = Math.round((eventZero - todayZero) / ONE_DAY_MS);
 
-    // 1. Notifikasi H-1
+    // H-1: pengingat sehari sebelum
     if (settings.notifyHMinus1 && diffDays === 1) {
-      const keyH1 = `h1_${event.id}_${eventDateStr}`;
-      if (!sentLog[keyH1]) {
+      const key = `h1_${event.id}_${eventDateStr}`;
+      if (!sentLog[key]) {
         showSystemNotification(
           `🔔 Pengingat H-1: ${event.nama_acara}`,
-          `Besok ${startClean ? 'pukul ' + startClean + ' WIB' : ''}${event.lokasi_nama ? ' di ' + event.lokasi_nama : ''}. Harap siapkan perlengkapan tim.`,
-          { tag: keyH1 }
+          `Besok${startClean ? ' pukul ' + startClean + ' WIB' : ''}${event.lokasi_nama ? ' di ' + event.lokasi_nama : ''}. Siapkan perlengkapan tim.`,
+          { tag: key }
         );
-        markSent(keyH1);
+        markSent(key);
       }
     }
 
-    // 2. Notifikasi Hari Ini Mulai (Saat jam mulai tiba)
+    // Hari H: saat jam mulai tiba (window 15 menit)
     if (settings.notifyEventStart && diffDays === 0 && startClean) {
-      const [sHour, sMin] = startClean.split(':').map(Number);
-      const startDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sHour, sMin, 0);
-      const diffMinutes = Math.round((now - startDateTime) / (60 * 1000));
+      const [sH, sM] = startClean.split(':').map(Number);
+      const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sH, sM, 0);
+      const diffMin = Math.round((now - startTime) / 60000);
 
-      if (diffMinutes >= 0 && diffMinutes <= 15) {
-        const keyStart = `start_${event.id}_${todayStr}`;
-        if (!sentLog[keyStart]) {
+      if (diffMin >= 0 && diffMin <= 15) {
+        const key = `start_${event.id}_${todayStr}`;
+        if (!sentLog[key]) {
           showSystemNotification(
             `🔴 Acara Dimulai: ${event.nama_acara}`,
-            `Sedang berlangsung sekarang di ${event.lokasi_nama || 'lokasi acara'}.`,
-            { tag: keyStart }
+            `Sedang berlangsung di ${event.lokasi_nama || 'lokasi acara'}.`,
+            { tag: key }
           );
-          markSent(keyStart);
+          markSent(key);
         }
       }
     }
 
-    // 3. Notifikasi Selesai (Manual status 'Selesai' atau otomatis lewat jam selesai)
+    // Selesai: otomatis lewat jam atau manual status 'Selesai'
     if (settings.notifyEventEnd) {
-      const isManualFinished = event.status === 'Selesai';
-      let isAutoFinished = false;
+      const isManual = event.status === 'Selesai';
+      let isAuto = false;
 
       if (diffDays === 0 && endClean) {
-        const [eHour, eMin] = endClean.split(':').map(Number);
-        const endDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eHour, eMin, 0);
-        if (now >= endDateTime) {
-          isAutoFinished = true;
-        }
+        const [eH, eM] = endClean.split(':').map(Number);
+        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eH, eM, 0);
+        if (now >= endTime) isAuto = true;
       }
 
-      if (isManualFinished || isAutoFinished) {
-        const keyEnd = `end_${event.id}_${eventDateStr}`;
-        if (!sentLog[keyEnd]) {
+      if (isManual || isAuto) {
+        const key = `end_${event.id}_${eventDateStr}`;
+        if (!sentLog[key]) {
           showSystemNotification(
             `✅ Acara Selesai: ${event.nama_acara}`,
-            `Agenda liputan telah usai. Terima kasih atas kerja keras tim multimedia!`,
-            { tag: keyEnd }
+            'Agenda liputan telah usai. Terima kasih atas kerja keras tim multimedia!',
+            { tag: key }
           );
-          markSent(keyEnd);
+          markSent(key);
         }
       }
     }

@@ -28,7 +28,9 @@ function uint8ArrayToBase64Url(bytes) {
 }
 
 function stringToBase64Url(str) {
-  return btoa(unescape(encodeURIComponent(str)))
+  // Menggunakan TextEncoder (menggantikan unescape() yang deprecated)
+  const bytes = new TextEncoder().encode(str);
+  return btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
@@ -138,7 +140,7 @@ export async function onRequest(context) {
       const payload = await request.json().catch(() => ({}));
       const title = payload.title || '📢 Tes Broadcast: Jadwal Bakid Multimedia';
       const body = payload.body || 'Uji coba transmisi notifikasi serentak ke seluruh tim multimedia.';
-      const icon = payload.icon || '/icon-192.png';
+      const icon = payload.icon || '/icon-192x192.png';
       const url = payload.url || '/';
 
       // Get subscribers from Google Sheets

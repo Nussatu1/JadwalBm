@@ -21,7 +21,12 @@ import Toast from './components/Toast';
 import SplashScreen from './components/SplashScreen';
 import InstallPrompt from './components/InstallPrompt';
 import InAppNotificationBanner from './components/InAppNotificationBanner';
-import { checkAndTriggerEventNotifications, subscribeUserToPush } from './utils/notificationService';
+import {
+  checkAndTriggerEventNotifications,
+  subscribeUserToPush,
+  initAudioUnlock,
+  registerSWMessageListener
+} from './utils/notificationService';
 
 export default function App() {
   const { isAdmin } = useAuth();
@@ -44,7 +49,13 @@ export default function App() {
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Auto-register Push Subscription only on mobile (avoids Chrome PC AbortError from FCM desktop service)
+  // Inisialisasi audio unlock + SW message listener saat app pertama dimuat
+  useEffect(() => {
+    initAudioUnlock();
+    registerSWMessageListener();
+  }, []);
+
+  // Auto-register Push Subscription only on mobile (avoids Chrome PC AbortError)
   useEffect(() => {
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (

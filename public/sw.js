@@ -1,5 +1,6 @@
-// Service Worker for Jadwal Acara Bakid Multimedia PWA
-const CACHE_NAME = 'jadwal-bm-v2';
+// Service Worker — Jadwal Acara Bakid Multimedia PWA
+// v3: Push handler robust, audio fix, cache cleanup
+const CACHE_NAME = 'jadwal-bm-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -11,161 +12,140 @@ const STATIC_ASSETS = [
   '/manifest.json'
 ];
 
-// Install Event: Cache Core Shell Assets (termasuk notif.mp3 untuk audio offline)
+// ─── Install: cache semua aset statis ────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .catch((err) => console.warn('[SW] Cache install partial error:', err))
   );
   self.skipWaiting();
 });
 
-// Activate Event: Bersihkan cache lama
+// ─── Activate: hapus cache lama ──────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
+    )
   );
   self.clients.claim();
 });
 
-// Fetch Event: Network-First for API, Cache-First for static assets
+// ─── Fetch: Cache-first untuk aset statis, bypass untuk API ──────────────────
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET dan API calls dari aggressive cache
-  if (event.request.method !== 'GET' || url.pathname.startsWith('/api/') || url.hostname.includes('google.com')) {
+  // Bypass: non-GET, API calls, Google domain
+  if (
+    event.request.method !== 'GET' ||
+    url.pathname.startsWith('/api/') ||
+    url.hostname.includes('google.com') ||
+    url.hostname.includes('script.google')
+  ) {
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+    caches.match(event.request).then((cached) => {
+      const networkFetch = fetch(event.request)
+        .then((res) => {
+          if (res && res.status === 200 && res.type === 'basic') {
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, res.clone()));
           }
-          return networkResponse;
+          return res;
         })
-        .catch(() => cachedResponse);
+        .catch(() => cached);
 
-      return cachedResponse || fetchPromise;
+      return cached || networkFetch;
     })
   );
 });
 
-// Notification Click: Fokus atau buka jendela app
+// ─── Notification Click: buka/fokus app ──────────────────────────────────────
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Fokus ke tab yang sudah terbuka jika ada
       for (const client of clientList) {
-        if (client.url && 'focus' in client) {
+        if ('focus' in client) {
           return client.focus();
         }
       }
-      if (clients.openWindow) {
-        return clients.openWindow('/');
-      }
+      // Buka tab baru jika belum ada
+      return clients.openWindow(targetUrl);
     })
   );
 });
 
-/**
- * Putar audio custom notif.mp3 dari cache Service Worker.
- *
- * Teknik: ambil dari SW cache → decode ke AudioBuffer → mainkan via AudioContext.
- * Ini menggantikan suara notifikasi default Android/sistem — persis seperti
- * yang dilakukan aplikasi DANA, GoPay, dan super-app lainnya.
- *
- * Catatan: AudioContext di Service Worker didukung oleh Chrome Android 66+.
- * Jika tidak tersedia (browser lama), fungsi ini diam-diam gagal (silent fail).
- */
-async function playCustomSound() {
-  try {
-    // 1. Ambil file audio dari SW cache (offline-ready, tanpa network)
-    const cache = await caches.open(CACHE_NAME);
-    let audioResponse = await cache.match('/notif.mp3');
-    if (!audioResponse || !audioResponse.ok) {
-      // Fallback: ambil dari network jika tidak ada di cache
-      audioResponse = await fetch('/notif.mp3');
-    }
-    const arrayBuffer = await audioResponse.arrayBuffer();
-
-    // 2. Dekode dan putar via AudioContext
-    const AudioCtx = self.AudioContext || self.webkitAudioContext;
-    if (!AudioCtx) return; // Browser tidak mendukung — diam
-
-    const ctx = new AudioCtx();
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-
-    const source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(ctx.destination);
-    source.start(0);
-
-    // 3. Tutup AudioContext setelah selesai (hemat memori)
-    source.onended = () => ctx.close();
-  } catch (e) {
-    // Silent fail — jangan throw agar showNotification tetap tampil
-    console.warn('[SW] Custom sound playback failed (expected on some browsers):', e.message);
-  }
-}
-
-/**
- * Server Web Push Event
- *
- * Strategi suara kustom:
- * - silent: true  → mematikan suara bawaan Android/sistem
- * - playCustomSound() → memutar notif.mp3 sebagai gantinya
- *
- * HP akan tetap bergetar (vibrate) dan notifikasi tetap muncul di panel,
- * hanya suaranya diganti dari default ke notif.mp3 milik aplikasi ini.
- */
+// ─── Push: Terima push server → tampilkan notifikasi ─────────────────────────
+//
+// ARSITEKTUR SUARA:
+//   - Saat app TERBUKA  → in-app banner + custom Audio() dari notificationService.js
+//   - Saat app TERTUTUP → push ini tampil, suara dari sistem (silent: false)
+//
+// AudioContext di background Service Worker TIDAK DIDUKUNG di Android Chrome
+// saat app tertutup. Menggunakan silent: false adalah cara yang benar untuk PWA.
+// Custom audio hanya bisa dimainkan saat app aktif (lihat notificationService.js).
+//
 self.addEventListener('push', (event) => {
+  // Parse payload dari server
   let data = {
-    title: 'Jadwal Bakid Multimedia',
-    body: 'Ada pembaruan jadwal liputan acara.'
+    title: '📢 Jadwal Bakid Multimedia',
+    body: 'Ada pembaruan jadwal liputan acara.',
+    icon: '/icon-192x192.png',
+    url: '/',
+    tag: 'bm-push'
   };
 
   if (event.data) {
     try {
-      data = event.data.json();
-    } catch (e) {
-      data.body = event.data.text();
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
+    } catch (_) {
+      // Jika bukan JSON valid, gunakan teks mentah sebagai body
+      data.body = event.data.text() || data.body;
     }
   }
 
   const notifOptions = {
-    body: data.body || 'Pembaruan jadwal liputan tim multimedia.',
+    body: data.body,
     icon: data.icon || '/icon-192x192.png',
     badge: '/icon-192x192.png',
-    vibrate: [300, 100, 300, 100, 300],
+    vibrate: [200, 100, 200, 100, 400],
     tag: data.tag || 'bm-push-' + Date.now(),
     renotify: true,
-    // KUNCI UTAMA: matikan suara default sistem Android
-    // Suara kustom dimainkan oleh playCustomSound() di bawah
-    silent: true,
-    data: { url: data.url || '/' }
+    requireInteraction: false,
+    // silent: false → suara sistem aktif (default Android)
+    // Custom audio diputar oleh notificationService.js saat app terbuka
+    silent: false,
+    data: {
+      url: data.url || '/'
+    }
   };
 
+  // Pastikan showNotification selalu jalan (tidak diblok oleh fungsi lain)
   event.waitUntil(
-    Promise.all([
-      // Tampilkan notifikasi (tanpa suara sistem)
-      self.registration.showNotification(data.title || 'Jadwal Bakid Multimedia', notifOptions),
-      // Mainkan notif.mp3 kustom sebagai gantinya
-      playCustomSound()
-    ])
+    self.registration.showNotification(data.title, notifOptions)
   );
+
+  // Kirim pesan ke semua tab yang terbuka agar in-app audio juga dimainkan
+  // (fire-and-forget, tidak memblok event.waitUntil)
+  clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    clientList.forEach((client) => {
+      client.postMessage({
+        type: 'PUSH_RECEIVED',
+        title: data.title,
+        body: data.body
+      });
+    });
+  });
 });
