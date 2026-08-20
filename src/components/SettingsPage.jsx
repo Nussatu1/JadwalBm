@@ -60,6 +60,7 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isNotifExpanded, setIsNotifExpanded] = useState(false);
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [isConfigExpanded, setIsConfigExpanded] = useState(false);
 
@@ -217,183 +218,206 @@ export default function SettingsPage() {
       </div>
 
       {/* 1. NOTIFIKASI PUSH OTOMATIS */}
-      <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-4 space-y-3.5 shadow-cf-card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-[6px] bg-[#FFF5EA] text-[#F6821F] flex items-center justify-center">
+      <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-cf-card overflow-hidden">
+        {/* Header Card (Klik untuk Buka/Ciutkan) */}
+        <div
+          onClick={() => setIsNotifExpanded(!isNotifExpanded)}
+          className="w-full p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F6F6F7]/60 transition-colors cursor-pointer select-none"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-[6px] bg-[#FFF5EA] text-[#F6821F] flex items-center justify-center shrink-0 border border-[#FBD6B0]/60">
               <Bell className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-[14px] font-semibold text-[#0B0C0E]">
+            <div className="min-w-0">
+              <h3 className="text-[14px] font-semibold text-[#0B0C0E] truncate">
                 Notifikasi Push Otomatis
               </h3>
-              <p className="text-[11px] text-[#6B7280]">
+              <p className="text-[11px] text-[#6B7280] truncate">
                 Pengingat di layar HP tanpa perlu buka web
               </p>
             </div>
           </div>
 
-          {/* Master Switch Button */}
-          <button
-            type="button"
-            onClick={handleToggleMasterNotif}
-            className={`h-7 px-3 rounded-[4px] text-[12px] font-medium transition-colors ${
-              notifSettings.enabled
-                ? 'bg-[#0F9D58] text-white'
-                : 'bg-[#F6F6F7] border border-[#E5E7EB] text-[#6B7280] hover:text-[#0B0C0E]'
-            }`}
-          >
-            {notifSettings.enabled ? 'Aktif' : 'Nonaktif'}
-          </button>
-        </div>
-
-        {/* Sub-toggles */}
-        <div className="pt-2 border-t border-[#E5E7EB] space-y-2.5">
-          {/* H-1 */}
-          <label className="flex items-center justify-between cursor-pointer group">
-            <div className="space-y-0.5">
-              <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
-                Pengingat H-1 (Besok Ada Acara)
-              </p>
-              <p className="text-[11px] text-[#6B7280]">
-                Dikirimkan 1 hari sebelum agenda liputan dimulai
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              disabled={!notifSettings.enabled}
-              checked={notifSettings.notifyHMinus1}
-              onChange={() => handleToggleSetting('notifyHMinus1')}
-              className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
-            />
-          </label>
-
-          {/* Start Event */}
-          <label className="flex items-center justify-between cursor-pointer group">
-            <div className="space-y-0.5">
-              <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
-                Acara Hari Ini Mulai (On-Air)
-              </p>
-              <p className="text-[11px] text-[#6B7280]">
-                Dikirim saat jam mulai acara telah tiba di hari H
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              disabled={!notifSettings.enabled}
-              checked={notifSettings.notifyEventStart}
-              onChange={() => handleToggleSetting('notifyEventStart')}
-              className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
-            />
-          </label>
-
-          {/* End Event */}
-          <label className="flex items-center justify-between cursor-pointer group">
-            <div className="space-y-0.5">
-              <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
-                Acara Selesai (Manual / Sesuai Jam)
-              </p>
-              <p className="text-[11px] text-[#6B7280]">
-                Dikirim saat acara ditandai selesai atau melewati jam selesai
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              disabled={!notifSettings.enabled}
-              checked={notifSettings.notifyEventEnd}
-              onChange={() => handleToggleSetting('notifyEventEnd')}
-              className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
-            />
-          </label>
-
-          {/* Custom Sound Toggle (notif.mp3) */}
-          <label className="flex items-center justify-between cursor-pointer group pt-1 border-t border-[#F3F4F6]">
-            <div className="space-y-0.5">
-              <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors flex items-center gap-1.5">
-                <Volume2 className="w-3.5 h-3.5 text-[#F6821F]" />
-                <span>Gunakan Nada Kustom (notif.mp3)</span>
-              </p>
-              <p className="text-[11px] text-[#6B7280]">
-                Memutar file audio notif.mp3 khusus (bukan nada dering bawaan HP)
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              disabled={!notifSettings.enabled}
-              checked={notifSettings.customAudio !== false}
-              onChange={() => handleToggleSetting('customAudio')}
-              className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
-            />
-          </label>
-        </div>
-
-        {/* Pusat Uji Coba & Sinkronisasi */}
-        <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
-              Pusat Uji Coba & Sinkronisasi
-            </span>
-          </div>
-
-          {/* Quick Action Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {/* 1. Daftarkan HP Ini */}
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            {/* Master Switch Button */}
             <button
               type="button"
-              onClick={handleSyncPushToken}
-              disabled={syncingPush}
-              className="h-9 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] text-[#DB6E0F] border border-[#FBD6B0] text-[12px] font-medium rounded-[6px] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-              title="Daftarkan token HP ini ke server agar menerima notifikasi saat aplikasi ditutup"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
-              <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
-            </button>
-
-            {/* 2. Tes Audio notif.mp3 */}
-            <button
-              type="button"
-              onClick={() => {
-                playCustomAudioNotification();
-                showToast('Memutar suara notif.mp3 🔊', 'info');
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleMasterNotif();
               }}
-              className="h-9 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-              title="Uji putar audio notif.mp3 di speaker HP ini"
+              className={`h-7 px-3 rounded-[4px] text-[12px] font-medium transition-colors ${
+                notifSettings.enabled
+                  ? 'bg-[#0F9D58] hover:bg-[#0B8043] text-white'
+                  : 'bg-[#F6F6F7] border border-[#E5E7EB] text-[#6B7280] hover:text-[#0B0C0E]'
+              }`}
             >
-              <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
-              <span>Tes Audio</span>
+              {notifSettings.enabled ? 'Aktif' : 'Nonaktif'}
             </button>
 
-            {/* 3. Tes Notifikasi Lokal */}
-            <button
-              type="button"
-              onClick={handleTestNotification}
-              className="h-9 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-              title="Kirim notifikasi uji coba ke HP ini"
-            >
-              <Send className="w-3.5 h-3.5 text-[#2E7DD1]" />
-              <span>Tes di HP Ini</span>
-            </button>
-          </div>
-
-          {/* Admin Broadcast Button (Prominent Full Width Action Bar) */}
-          {isAdmin && (
-            <div className="pt-1 space-y-1">
-              <button
-                type="button"
-                onClick={handleBroadcastTest}
-                disabled={broadcastLoading}
-                className="w-full h-10 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12.5px] font-medium rounded-[6px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-cf-card"
-                title="Kirim notifikasi siaran serentak ke semua HP anggota yang terdaftar"
-              >
-                <Radio className={`w-4 h-4 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
-                <span>{broadcastLoading ? 'Menyiarkan ke Seluruh Perangkat...' : 'Siarkan Tes Notifikasi ke Semua Anggota'}</span>
-              </button>
-              <p className="text-[11px] text-[#6B7280] text-center">
-                Mengirim sinyal push serentak ke semua perangkat yang terdaftar di database.
-              </p>
+            {/* Chevron Toggle */}
+            <div className="w-7 h-7 rounded-[6px] border border-[#E5E7EB] bg-white flex items-center justify-center text-[#6B7280] shrink-0 ml-1">
+              {isNotifExpanded ? (
+                <ChevronUp className="w-4 h-4 text-[#0B0C0E]" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+              )}
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Content Body (Hanya tampil saat dibuka) */}
+        {isNotifExpanded && (
+          <div className="p-4 pt-3 space-y-3.5 border-t border-[#E5E7EB]">
+            {/* Sub-toggles */}
+            <div className="space-y-2.5">
+              {/* H-1 */}
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div className="space-y-0.5">
+                  <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                    Pengingat H-1 (Besok Ada Acara)
+                  </p>
+                  <p className="text-[11px] text-[#6B7280]">
+                    Dikirimkan 1 hari sebelum agenda liputan dimulai
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  disabled={!notifSettings.enabled}
+                  checked={notifSettings.notifyHMinus1}
+                  onChange={() => handleToggleSetting('notifyHMinus1')}
+                  className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+                />
+              </label>
+
+              {/* Start Event */}
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div className="space-y-0.5">
+                  <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                    Acara Hari Ini Mulai (On-Air)
+                  </p>
+                  <p className="text-[11px] text-[#6B7280]">
+                    Dikirim saat jam mulai acara telah tiba di hari H
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  disabled={!notifSettings.enabled}
+                  checked={notifSettings.notifyEventStart}
+                  onChange={() => handleToggleSetting('notifyEventStart')}
+                  className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+                />
+              </label>
+
+              {/* End Event */}
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div className="space-y-0.5">
+                  <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                    Acara Selesai (Manual / Sesuai Jam)
+                  </p>
+                  <p className="text-[11px] text-[#6B7280]">
+                    Dikirim saat acara ditandai selesai atau melewati jam selesai
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  disabled={!notifSettings.enabled}
+                  checked={notifSettings.notifyEventEnd}
+                  onChange={() => handleToggleSetting('notifyEventEnd')}
+                  className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+                />
+              </label>
+
+              {/* Custom Sound Toggle (notif.mp3) */}
+              <label className="flex items-center justify-between cursor-pointer group pt-1 border-t border-[#F3F4F6]">
+                <div className="space-y-0.5">
+                  <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors flex items-center gap-1.5">
+                    <Volume2 className="w-3.5 h-3.5 text-[#F6821F]" />
+                    <span>Gunakan Nada Kustom (notif.mp3)</span>
+                  </p>
+                  <p className="text-[11px] text-[#6B7280]">
+                    Memutar file audio notif.mp3 khusus (bukan nada dering bawaan HP)
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  disabled={!notifSettings.enabled}
+                  checked={notifSettings.customAudio !== false}
+                  onChange={() => handleToggleSetting('customAudio')}
+                  className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+                />
+              </label>
+            </div>
+
+            {/* Pusat Uji Coba & Sinkronisasi */}
+            <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                  Pusat Uji Coba & Sinkronisasi
+                </span>
+              </div>
+
+              {/* Quick Action Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* 1. Daftarkan HP Ini */}
+                <button
+                  type="button"
+                  onClick={handleSyncPushToken}
+                  disabled={syncingPush}
+                  className="h-9 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] text-[#DB6E0F] border border-[#FBD6B0] text-[12px] font-medium rounded-[6px] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                  title="Daftarkan token HP ini ke server agar menerima notifikasi saat aplikasi ditutup"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
+                  <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
+                </button>
+
+                {/* 2. Tes Audio notif.mp3 */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playCustomAudioNotification();
+                    showToast('Memutar suara notif.mp3 🔊', 'info');
+                  }}
+                  className="h-9 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                  title="Uji putar audio notif.mp3 di speaker HP ini"
+                >
+                  <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
+                  <span>Tes Audio</span>
+                </button>
+
+                {/* 3. Tes Notifikasi Lokal */}
+                <button
+                  type="button"
+                  onClick={handleTestNotification}
+                  className="h-9 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                  title="Kirim notifikasi uji coba ke HP ini"
+                >
+                  <Send className="w-3.5 h-3.5 text-[#2E7DD1]" />
+                  <span>Tes di HP Ini</span>
+                </button>
+              </div>
+
+              {/* Admin Broadcast Button */}
+              {isAdmin && (
+                <div className="pt-1 space-y-1">
+                  <button
+                    type="button"
+                    onClick={handleBroadcastTest}
+                    disabled={broadcastLoading}
+                    className="w-full h-10 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12.5px] font-medium rounded-[6px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-cf-card"
+                    title="Kirim notifikasi siaran serentak ke semua HP anggota yang terdaftar"
+                  >
+                    <Radio className={`w-4 h-4 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
+                    <span>{broadcastLoading ? 'Menyiarkan ke Seluruh Perangkat...' : 'Siarkan Tes Notifikasi ke Semua Anggota'}</span>
+                  </button>
+                  <p className="text-[11px] text-[#6B7280] text-center">
+                    Mengirim sinyal push serentak ke semua perangkat yang terdaftar di database.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. PROFIL TIM & AKSES ADMIN */}
