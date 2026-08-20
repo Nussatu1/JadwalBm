@@ -20,6 +20,7 @@ import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
 import SplashScreen from './components/SplashScreen';
 import InstallPrompt from './components/InstallPrompt';
+import InAppNotificationBanner from './components/InAppNotificationBanner';
 import { checkAndTriggerEventNotifications } from './utils/notificationService';
 
 export default function App() {
@@ -87,6 +88,9 @@ export default function App() {
       {showSplash && (
         <SplashScreen onFinish={() => setShowSplash(false)} duration={2000} />
       )}
+
+      {/* In-App Visual Floating Push Notification Banner */}
+      <InAppNotificationBanner />
 
       {/* PWA Install Banner */}
       <InstallPrompt />

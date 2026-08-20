@@ -119,9 +119,17 @@ export async function requestNotificationPermission() {
 export async function showSystemNotification(title, body, options = {}) {
   const settings = getNotificationSettings();
 
-  // Play audio
+  // 1. Play custom audio
   playCustomAudioNotification();
 
+  // 2. Dispatch in-app visual notification event (for active window)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('in-app-notification', {
+      detail: { title, body, tag: options.tag }
+    }));
+  }
+
+  // 3. Check browser notification permission
   if (!('Notification' in window) || Notification.permission !== 'granted') {
     return false;
   }
@@ -130,30 +138,36 @@ export async function showSystemNotification(title, body, options = {}) {
     body,
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png',
-    vibrate: [300, 100, 300, 100, 300], // Strong vibration pattern
-    silent: false, // Ensure device rings / vibrates
+    vibrate: [300, 100, 300, 100, 300],
+    silent: false,
     tag: options.tag || 'bakid-notif-' + Date.now(),
     renotify: true,
     data: options.data || {},
     ...options
   };
 
-  // Try Service Worker showNotification first (Works best on Android PWA)
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  // Method A: Always try Service Worker Registration (Required on Android / Chrome Mobile)
+  if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification(title, notifOptions);
-      return true;
+      let reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) {
+        reg = await navigator.serviceWorker.register('/sw.js');
+      }
+      if (reg) {
+        await reg.showNotification(title, notifOptions);
+        return true;
+      }
     } catch (e) {
-      // Fallback
+      console.warn('Service worker showNotification failed, trying fallback:', e);
     }
   }
 
+  // Method B: Standard Notification API (Desktop Safari/Firefox)
   try {
     new Notification(title, notifOptions);
     return true;
   } catch (e) {
-    console.error('Notification error:', e);
+    console.warn('Standard Notification fallback error:', e);
     return false;
   }
 }
