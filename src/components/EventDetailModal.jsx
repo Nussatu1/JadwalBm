@@ -12,7 +12,11 @@ import {
   CheckCircle,
   ExternalLink,
   FileText,
-  AlignLeft
+  AlignLeft,
+  ClipboardCheck,
+  CheckCircle2,
+  Circle,
+  RotateCcw
 } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import Modal from './ui/Modal';
@@ -28,6 +32,75 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const [checklistPhase, setChecklistPhase] = useState('bawa'); // 'bawa' | 'kembali'
+
+  // Load checklist state from localStorage per event
+  const [gearChecklist, setGearChecklist] = useState(() => {
+    if (!event?.id) return {};
+    try {
+      const saved = localStorage.getItem(`bm_gear_check_${event.id}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Sync checklist state when event changes
+  React.useEffect(() => {
+    if (event?.id) {
+      try {
+        const saved = localStorage.getItem(`bm_gear_check_${event.id}`);
+        setGearChecklist(saved ? JSON.parse(saved) : {});
+      } catch {
+        setGearChecklist({});
+      }
+    }
+  }, [event?.id]);
+
+  const toggleGearCheck = (gearName) => {
+    setGearChecklist(prev => {
+      const current = prev[gearName] || { bawa: false, kembali: false };
+      const updated = {
+        ...prev,
+        [gearName]: {
+          ...current,
+          [checklistPhase]: !current[checklistPhase]
+        }
+      };
+      try {
+        localStorage.setItem(`bm_gear_check_${event.id}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleCheckAll = () => {
+    setGearChecklist(prev => {
+      const updated = { ...prev };
+      alatList.forEach(gear => {
+        const current = updated[gear] || { bawa: false, kembali: false };
+        updated[gear] = { ...current, [checklistPhase]: true };
+      });
+      try {
+        localStorage.setItem(`bm_gear_check_${event.id}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleResetChecklist = () => {
+    setGearChecklist(prev => {
+      const updated = { ...prev };
+      alatList.forEach(gear => {
+        const current = updated[gear] || { bawa: false, kembali: false };
+        updated[gear] = { ...current, [checklistPhase]: false };
+      });
+      try {
+        localStorage.setItem(`bm_gear_check_${event.id}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
 
   if (!isOpen || !event) return null;
 
@@ -152,25 +225,108 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
           )}
 
 
-          {/* 4. Peralatan / Media Gear */}
-          {alatList.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1 text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">
-                <Video className="w-3 h-3" />
-                <span>Peralatan / Gear</span>
+          {/* 4. Peralatan / Media Gear & Interactive Checklist */}
+          {alatList.length > 0 && (() => {
+            const checkedCount = alatList.filter(gear => gearChecklist[gear]?.[checklistPhase]).length;
+            const isAllChecked = checkedCount === alatList.length;
+
+            return (
+              <div className="space-y-2 border border-[#E5E7EB] rounded-[6px] p-3 bg-[#F6F6F7]">
+                {/* Header & Phase Switcher */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#0B0C0E] uppercase tracking-wider">
+                    <ClipboardCheck className="w-3.5 h-3.5 text-[#F6821F]" />
+                    <span>Checklist Peralatan</span>
+                  </div>
+
+                  {/* Phase Tabs: Berangkat (Bawa) vs Pulang (Kembali) */}
+                  <div className="flex items-center bg-[#E5E7EB] p-0.5 rounded-[5px] text-[10.5px] font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setChecklistPhase('bawa')}
+                      className={`px-2 py-0.5 rounded-[4px] transition-colors ${
+                        checklistPhase === 'bawa'
+                          ? 'bg-white text-[#0B0C0E] shadow-sm font-semibold'
+                          : 'text-[#6B7280] hover:text-[#0B0C0E]'
+                      }`}
+                    >
+                      🎒 Bawa ({alatList.filter(g => gearChecklist[g]?.bawa).length}/{alatList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChecklistPhase('kembali')}
+                      className={`px-2 py-0.5 rounded-[4px] transition-colors ${
+                        checklistPhase === 'kembali'
+                          ? 'bg-white text-[#0B0C0E] shadow-sm font-semibold'
+                          : 'text-[#6B7280] hover:text-[#0B0C0E]'
+                      }`}
+                    >
+                      📦 Kembali ({alatList.filter(g => gearChecklist[g]?.kembali).length}/{alatList.length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Progress Bar & Quick Actions */}
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <div className="flex items-center gap-1.5 text-[#374151]">
+                    <span className={`w-2 h-2 rounded-full ${isAllChecked ? 'bg-[#0F9D58]' : 'bg-[#F6821F]'}`} />
+                    <span className="font-medium">
+                      {isAllChecked
+                        ? checklistPhase === 'bawa' ? 'Semua alat siap dibawa ✅' : 'Semua alat lengkap kembali ✅'
+                        : `${checkedCount} dari ${alatList.length} alat tercentang`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-[10.5px]">
+                    <button
+                      type="button"
+                      onClick={handleCheckAll}
+                      className="text-[#F6821F] hover:underline font-medium px-1"
+                    >
+                      Centang Semua
+                    </button>
+                    <span className="text-[#D1D5DB]">|</span>
+                    <button
+                      type="button"
+                      onClick={handleResetChecklist}
+                      className="text-[#6B7280] hover:text-[#E5484D] font-medium px-1 flex items-center gap-0.5"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      Reset
+                    </button>
+                  </div>
+                </div>
+
+                {/* Interactive Gear Checklist Items */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                  {alatList.map((alat, idx) => {
+                    const isChecked = Boolean(gearChecklist[alat]?.[checklistPhase]);
+                    return (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => toggleGearCheck(alat)}
+                        className={`flex items-center gap-2 p-2 rounded-[5px] border text-left transition-all ${
+                          isChecked
+                            ? 'bg-[#EBF9F1] border-[#B7EBD0] text-[#0B0C0E]'
+                            : 'bg-white border-[#E5E7EB] text-[#374151] hover:border-[#D1D5DB]'
+                        }`}
+                      >
+                        {isChecked ? (
+                          <CheckCircle2 className="w-4 h-4 text-[#0F9D58] shrink-0" />
+                        ) : (
+                          <Circle className="w-4 h-4 text-[#9CA3AF] shrink-0" />
+                        )}
+                        <span className={`text-[12px] truncate ${isChecked ? 'font-medium text-[#0F9D58] line-through' : ''}`}>
+                          {alat}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1">
-                {alatList.map((alat, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-[11px] font-medium bg-white text-[#0B0C0E] border border-[#E5E7EB]"
-                  >
-                    {alat}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* 5. Deskripsi & Brief Tugas */}
           {event.deskripsi && (
