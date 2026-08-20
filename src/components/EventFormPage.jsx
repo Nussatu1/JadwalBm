@@ -5,11 +5,6 @@ import Select from './ui/Select';
 import DatePicker from './ui/DatePicker';
 import TimePicker from './ui/TimePicker';
 
-const PRESET_GEARS = [
-  'Sony A7III', 'Sony FX30', 'DJI Drone', 'Mic Wireless', 'Tripod Fluid Head',
-  'Lighting Godox', 'ATEM Mini Streaming', 'Laptop Streaming', 'Audio Mixer Direct'
-];
-
 const PRESET_CATEGORIES = ['Liputan', 'Pengajian', 'Wisuda', 'Kajian', 'Rapat', 'Dokumentasi', 'Lainnya'];
 
 const STATUS_OPTIONS = [
@@ -20,7 +15,8 @@ const STATUS_OPTIONS = [
 ];
 
 export default function EventFormPage({ initialData = null, onCancel, onSuccess }) {
-  const { anggota, createEvent, updateEvent, showToast } = useEvents();
+  const { anggota, peralatan, createEvent, updateEvent, showToast } = useEvents();
+
 
   const [formData, setFormData] = useState({
     nama_acara: '',
@@ -385,21 +381,22 @@ export default function EventFormPage({ initialData = null, onCancel, onSuccess 
           </label>
 
           <div className="flex flex-wrap gap-1 mb-2">
-            {PRESET_GEARS.map(gear => (
+            {peralatan.map(item => (
               <button
                 type="button"
-                key={gear}
-                onClick={() => addMediaTag(gear)}
+                key={item.id || item.nama}
+                onClick={() => addMediaTag(item.nama)}
                 className={`text-[11px] px-2 py-0.5 rounded-[4px] border font-medium transition-colors ${
-                  mediaTags.includes(gear)
+                  mediaTags.includes(item.nama)
                     ? 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F]'
                     : 'bg-white border-[#E5E7EB] text-[#6B7280] hover:bg-[#F6F6F7]'
                 }`}
               >
-                + {gear}
+                + {item.nama}
               </button>
             ))}
           </div>
+
 
           <input
             type="text"

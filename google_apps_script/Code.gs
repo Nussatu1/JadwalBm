@@ -21,7 +21,8 @@
 const SHEET_NAMES = {
   EVENTS: 'Acara',
   ANGGOTA: 'Anggota',
-  CONFIG: 'Config'
+  CONFIG: 'Config',
+  PERALATAN: 'Peralatan'
 };
 
 // Header Kolom Sheet Acara
@@ -51,10 +52,31 @@ const ANGGOTA_HEADERS = [
   'aktif'
 ];
 
-// Header Kolom Sheet Config
+// Header Kolom Sheet Config (baris 1=header, baris 2=nilai)
 const CONFIG_HEADERS = [
   'admin_password_hash',
   'whatsapp_group_link'
+];
+
+// Header Kolom Sheet Peralatan
+const PERALATAN_HEADERS = [
+  'id',
+  'nama_peralatan',
+  'kategori',
+  'aktif'
+];
+
+// Daftar peralatan default (dapat diedit langsung di Sheet)
+const DEFAULT_PERALATAN = [
+  ['Sony A7III', 'Kamera', true],
+  ['Sony FX30', 'Kamera', true],
+  ['DJI Drone', 'Drone', true],
+  ['Mic Wireless', 'Audio', true],
+  ['Tripod Fluid Head', 'Aksesori', true],
+  ['Lighting Godox', 'Pencahayaan', true],
+  ['ATEM Mini Streaming', 'Streaming', true],
+  ['Laptop Streaming', 'Komputer', true],
+  ['Audio Mixer Direct', 'Audio', true]
 ];
 
 /**
@@ -78,6 +100,9 @@ function doGet(e) {
         break;
       case 'getConfig':
         result = handleGetConfig();
+        break;
+      case 'getPeralatan':
+        result = handleGetPeralatan();
         break;
       case 'getPushSubscribers':
         result = handleGetPushSubscribers();
@@ -198,7 +223,7 @@ function createJsonResponse(data) {
 }
 
 /**
- * Pastikan 3 Sheet (Acara, Anggota, Config) tersedia beserta header kolomnya
+ * Pastikan semua Sheet (Acara, Anggota, Config, Peralatan) tersedia beserta header kolomnya
  */
 function ensureSheetsInitialized() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -217,21 +242,45 @@ function ensureSheetsInitialized() {
     sheetAnggota = ss.insertSheet(SHEET_NAMES.ANGGOTA);
     sheetAnggota.appendRow(ANGGOTA_HEADERS);
     sheetAnggota.getRange(1, 1, 1, ANGGOTA_HEADERS.length).setFontWeight('bold').setBackground('#E2E8F0');
-
-    // Default anggota contoh jika kosong
     sheetAnggota.appendRow([generateUUID(), 'Fulan Multimedia', 'Videografer / Drone', true]);
     sheetAnggota.appendRow([generateUUID(), 'Ahmad Editor', 'Editor Video', true]);
     sheetAnggota.appendRow([generateUUID(), 'Zaid Fotografer', 'Fotografer', true]);
   }
 
-  // 3. Sheet Config
+  // 3. Sheet Config — baris 1: HEADER, baris 2: NILAI
   let sheetConfig = ss.getSheetByName(SHEET_NAMES.CONFIG);
   if (!sheetConfig) {
     sheetConfig = ss.insertSheet(SHEET_NAMES.CONFIG);
-    // Inisialisasi default SHA-256 hash password admin:
+    // Baris 1: header (label kolom agar mudah dibaca)
+    sheetConfig.appendRow(['admin_password_hash', 'whatsapp_group_link']);
+    sheetConfig.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#FFF5EA');
+    // Baris 2: nilai default
     const defaultHash = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
-    const defaultWa = 'https://chat.whatsapp.com/';
+    const defaultWa = 'https://chat.whatsapp.com/FOzKACYSO91BH9QLznPUt2';
     sheetConfig.appendRow([defaultHash, defaultWa]);
+  } else {
+    // Jika sheet Config sudah ada tapi tanpa header (baris 1 langsung nilai)
+    // Cek apakah baris 1 kolom A berisi hash (64 karakter hex) — berarti header belum ada
+    const firstCell = String(sheetConfig.getRange(1, 1).getValue()).trim();
+    if (firstCell.length === 64 && /^[0-9a-f]+$/i.test(firstCell)) {
+      // Sisipkan baris header di posisi 1
+      sheetConfig.insertRowBefore(1);
+      sheetConfig.getRange(1, 1).setValue('admin_password_hash');
+      sheetConfig.getRange(1, 2).setValue('whatsapp_group_link');
+      sheetConfig.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#FFF5EA');
+    }
+  }
+
+  // 4. Sheet Peralatan (daftar perangkat media — dapat diedit langsung di Sheets)
+  let sheetPeralatan = ss.getSheetByName(SHEET_NAMES.PERALATAN);
+  if (!sheetPeralatan) {
+    sheetPeralatan = ss.insertSheet(SHEET_NAMES.PERALATAN);
+    sheetPeralatan.appendRow(PERALATAN_HEADERS);
+    sheetPeralatan.getRange(1, 1, 1, PERALATAN_HEADERS.length).setFontWeight('bold').setBackground('#E8F5E9');
+    // Isi default peralatan
+    DEFAULT_PERALATAN.forEach(function(item) {
+      sheetPeralatan.appendRow([generateUUID(), item[0], item[1], item[2]]);
+    });
   }
 }
 
@@ -652,9 +701,14 @@ function handleGetConfig() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_NAMES.CONFIG);
 
-  let waGroup = 'https://chat.whatsapp.com/';
+  let waGroup = 'https://chat.whatsapp.com/FOzKACYSO91BH9QLznPUt2';
+
   if (sheet && sheet.getLastRow() >= 2) {
-    waGroup = String(sheet.getRange(2, 2).getValue() || waGroup);
+    // Baris 1 = header, baris 2 = nilai
+    const rawVal = String(sheet.getRange(2, 2).getValue() || '').trim();
+    if (rawVal && rawVal.startsWith('http')) {
+      waGroup = rawVal;
+    }
   }
 
   return {
@@ -664,6 +718,34 @@ function handleGetConfig() {
       whatsapp_group_link: waGroup
     }
   };
+}
+
+/**
+ * Ambil daftar peralatan media dari sheet Peralatan
+ */
+function handleGetPeralatan() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAMES.PERALATAN);
+
+  if (!sheet || sheet.getLastRow() <= 1) {
+    return { success: true, data: [] };
+  }
+
+  const values = sheet.getDataRange().getValues();
+  const peralatan = [];
+  for (let i = 1; i < values.length; i++) {
+    const aktif = values[i][3];
+    // Hanya tampilkan peralatan yang aktif (kolom 'aktif' = TRUE)
+    if (aktif === true || aktif === 'TRUE' || aktif === 'true' || aktif === 1) {
+      peralatan.push({
+        id: values[i][0],
+        nama: String(values[i][1]).trim(),
+        kategori: String(values[i][2]).trim()
+      });
+    }
+  }
+
+  return { success: true, data: peralatan };
 }
 
 function handleUpdateConfig(data) {

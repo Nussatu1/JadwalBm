@@ -68,17 +68,21 @@ export function shareToWhatsApp(event, phoneOrGroupUrl = '') {
   const encodedText = encodeURIComponent(message);
 
   if (phoneOrGroupUrl && phoneOrGroupUrl.includes('chat.whatsapp.com/')) {
-    // Jika link grup WA, kita buka WhatsApp share text target
-    const url = `https://api.whatsapp.com/send?text=${encodedText}`;
+    // Link grup WA: buka langsung link undangan grup
+    // WhatsApp akan membuka grup, user tinggal kirim pesan di sana
+    // Format: https://chat.whatsapp.com/XXXXX?text=...
+    const separator = phoneOrGroupUrl.includes('?') ? '&' : '?';
+    const url = `${phoneOrGroupUrl}${separator}text=${encodedText}`;
     window.open(url, '_blank');
   } else if (phoneOrGroupUrl && phoneOrGroupUrl.replace(/\D/g, '').length > 5) {
-    // Jika nomor telepon spesifik
+    // Nomor telepon spesifik
     const cleanPhone = phoneOrGroupUrl.replace(/\D/g, '');
     const url = `https://wa.me/${cleanPhone}?text=${encodedText}`;
     window.open(url, '_blank');
   } else {
-    // Share umum ke WhatsApp (bisa pilih kontak/grup langsung di WA)
+    // Fallback: share umum WhatsApp (pilih kontak/grup di WA)
     const url = `https://api.whatsapp.com/send?text=${encodedText}`;
     window.open(url, '_blank');
   }
 }
+

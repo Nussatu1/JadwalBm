@@ -358,12 +358,34 @@ export const api = {
 
     // Mock Mode
     const config = getLocalData('bakid_config_mock', {
-      whatsapp_group_link: 'https://chat.whatsapp.com/'
+      whatsapp_group_link: 'https://chat.whatsapp.com/FOzKACYSO91BH9QLznPUt2'
     });
     return {
       success: true,
       message: 'Config loaded',
       data: config
+    };
+  },
+
+  async getPeralatan() {
+    if (this.isConfigured()) {
+      return await fetchGasGet('getPeralatan');
+    }
+
+    // Mock Mode — daftar default jika belum ada sheet Peralatan
+    return {
+      success: true,
+      data: [
+        { id: '1', nama: 'Sony A7III', kategori: 'Kamera' },
+        { id: '2', nama: 'Sony FX30', kategori: 'Kamera' },
+        { id: '3', nama: 'DJI Drone', kategori: 'Drone' },
+        { id: '4', nama: 'Mic Wireless', kategori: 'Audio' },
+        { id: '5', nama: 'Tripod Fluid Head', kategori: 'Aksesori' },
+        { id: '6', nama: 'Lighting Godox', kategori: 'Pencahayaan' },
+        { id: '7', nama: 'ATEM Mini Streaming', kategori: 'Streaming' },
+        { id: '8', nama: 'Laptop Streaming', kategori: 'Komputer' },
+        { id: '9', nama: 'Audio Mixer Direct', kategori: 'Audio' }
+      ]
     };
   },
 

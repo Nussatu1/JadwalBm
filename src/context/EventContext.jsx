@@ -9,7 +9,8 @@ export function EventProvider({ children }) {
 
   const [events, setEvents] = useState([]);
   const [anggota, setAnggota] = useState([]);
-  const [config, setConfig] = useState({ whatsapp_group_link: 'https://chat.whatsapp.com/' });
+  const [peralatan, setPeralatan] = useState([]);
+  const [config, setConfig] = useState({ whatsapp_group_link: 'https://chat.whatsapp.com/FOzKACYSO91BH9QLznPUt2' });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -45,10 +46,11 @@ export function EventProvider({ children }) {
 
     setError(null);
     try {
-      const [eventsRes, anggotaRes, configRes] = await Promise.allSettled([
+      const [eventsRes, anggotaRes, configRes, peralatanRes] = await Promise.allSettled([
         api.getEvents(),
         api.getAnggota(),
-        api.getConfig()
+        api.getConfig(),
+        api.getPeralatan()
       ]);
 
       if (eventsRes.status === 'fulfilled' && eventsRes.value.success) {
@@ -58,7 +60,10 @@ export function EventProvider({ children }) {
         setAnggota(anggotaRes.value.data || []);
       }
       if (configRes.status === 'fulfilled' && configRes.value.success) {
-        setConfig(configRes.value.data || { whatsapp_group_link: 'https://chat.whatsapp.com/' });
+        setConfig(configRes.value.data || { whatsapp_group_link: 'https://chat.whatsapp.com/FOzKACYSO91BH9QLznPUt2' });
+      }
+      if (peralatanRes.status === 'fulfilled' && peralatanRes.value.success) {
+        setPeralatan(peralatanRes.value.data || []);
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -268,6 +273,7 @@ export function EventProvider({ children }) {
         events,
         filteredEvents,
         anggota,
+        peralatan,
         config,
         loading,
         refreshing,
