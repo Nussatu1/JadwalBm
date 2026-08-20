@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, UserPlus, Edit2, Trash2, CheckCircle2, XCircle, Search } from 'lucide-react';
+import { Users, UserPlus, Edit2, Trash2, CheckCircle2, XCircle, Search, SearchX, RotateCcw } from 'lucide-react';
 import { useEvents } from '../context/EventContext';
 import { useAuth } from '../context/AuthContext';
 import Modal from './ui/Modal';
@@ -171,8 +171,56 @@ export default function MemberManagement() {
       </div>
 
       {filteredAnggota.length === 0 && (
-        <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-6 text-center">
-          <p className="text-[13px] text-[#6B7280]">Tidak ada anggota yang cocok dengan pencarian.</p>
+        <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-8 text-center space-y-3 shadow-cf-card">
+          {search ? (
+            <>
+              <div className="w-11 h-11 rounded-full bg-[#FFF5EA] border border-[#FBD6B0] text-[#F6821F] flex items-center justify-center mx-auto shadow-sm">
+                <SearchX className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-[#0B0C0E] text-[14px]">
+                  Anggota Tidak Ditemukan
+                </h3>
+                <p className="text-[12px] text-[#6B7280] max-w-xs mx-auto">
+                  Tidak ada anggota yang cocok dengan kata kunci <span className="font-semibold text-[#0B0C0E]">"{search}"</span>.
+                </p>
+              </div>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0B0C0E] border border-[#E5E7EB] text-[12px] font-medium rounded-[6px] transition-colors shadow-cf-card"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-[#6B7280]" />
+                  <span>Reset Pencarian</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-11 h-11 rounded-full bg-[#F6F6F7] border border-[#E5E7EB] text-[#6B7280] flex items-center justify-center mx-auto shadow-sm">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-[#0B0C0E] text-[14px]">
+                  Belum Ada Data Anggota
+                </h3>
+                <p className="text-[12px] text-[#6B7280]">
+                  Daftar anggota tim multimedia belum ditambahkan ke sistem.
+                </p>
+              </div>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleOpenCreate}
+                  className="inline-flex items-center gap-1.5 h-8 px-3.5 bg-[#F6821F] text-white text-[12px] font-medium rounded-[6px] hover:bg-[#DB6E0F] transition-colors shadow-cf-card"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Tambah Anggota Baru</span>
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
 

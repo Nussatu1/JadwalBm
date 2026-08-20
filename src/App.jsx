@@ -3,7 +3,9 @@ import {
   Plus, 
   Search, 
   CalendarDays,
-  CheckCircle2
+  CheckCircle2,
+  SearchX,
+  RotateCcw
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { useEvents } from './context/EventContext';
@@ -190,27 +192,75 @@ export default function App() {
                 ))}
               </div>
             ) : filteredEvents.length === 0 ? (
-              <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-8 text-center space-y-2">
-                <div className="w-10 h-10 rounded-[6px] bg-[#F6F6F7] border border-[#E5E7EB] text-[#6B7280] flex items-center justify-center mx-auto">
-                  <CalendarDays className="w-5 h-5" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-[#0B0C0E] text-[14px]">
-                    Tidak ada agenda acara
-                  </h3>
-                  <p className="text-[12px] text-[#6B7280] max-w-xs mx-auto">
-                    {searchQuery
-                      ? 'Tidak ada acara yang cocok dengan kata kunci pencarian.'
-                      : 'Jadwal liputan belum ditambahkan ke sistem.'}
-                  </p>
-                </div>
-                {isAdmin && (
-                  <button
-                    onClick={handleOpenCreateEvent}
-                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#F6821F] text-white text-[12px] font-medium rounded-[6px] hover:bg-[#DB6E0F] transition-colors mt-2"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Tambah Acara Baru
-                  </button>
+              <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-8 text-center space-y-3 shadow-cf-card">
+                {searchQuery ? (
+                  <>
+                    <div className="w-11 h-11 rounded-full bg-[#FFF5EA] border border-[#FBD6B0] text-[#F6821F] flex items-center justify-center mx-auto shadow-sm">
+                      <SearchX className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-[#0B0C0E] text-[14px]">
+                        Pencarian Tidak Ditemukan
+                      </h3>
+                      <p className="text-[12px] text-[#6B7280] max-w-xs mx-auto">
+                        Tidak ada acara yang cocok dengan kata kunci <span className="font-semibold text-[#0B0C0E]">"{searchQuery}"</span>.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0B0C0E] border border-[#E5E7EB] text-[12px] font-medium rounded-[6px] transition-colors shadow-cf-card"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-[#6B7280]" />
+                        <span>Reset Pencarian</span>
+                      </button>
+                      {hideCompleted && (
+                        <button
+                          type="button"
+                          onClick={() => setHideCompleted(false)}
+                          className="inline-flex items-center gap-1 h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0F9D58] border border-[#B7EBD0] text-[12px] font-medium rounded-[6px] transition-colors"
+                        >
+                          <span>Tampilkan Acara Selesai</span>
+                        </button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-11 h-11 rounded-full bg-[#F6F6F7] border border-[#E5E7EB] text-[#6B7280] flex items-center justify-center mx-auto shadow-sm">
+                      <CalendarDays className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-[#0B0C0E] text-[14px]">
+                        Belum Ada Agenda Acara
+                      </h3>
+                      <p className="text-[12px] text-[#6B7280] max-w-xs mx-auto">
+                        {hideCompleted 
+                          ? 'Semua acara saat ini berstatus selesai.'
+                          : 'Jadwal liputan tim multimedia belum ditambahkan.'}
+                      </p>
+                    </div>
+                    {hideCompleted && (
+                      <button
+                        type="button"
+                        onClick={() => setHideCompleted(false)}
+                        className="inline-flex items-center gap-1 h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0F9D58] border border-[#B7EBD0] text-[12px] font-medium rounded-[6px] transition-colors"
+                      >
+                        <span>Tampilkan Acara Selesai</span>
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={handleOpenCreateEvent}
+                        className="inline-flex items-center gap-1.5 h-8 px-3.5 bg-[#F6821F] text-white text-[12px] font-medium rounded-[6px] hover:bg-[#DB6E0F] transition-colors shadow-cf-card"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tambah Acara Baru</span>
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             ) : (
