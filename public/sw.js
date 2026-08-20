@@ -52,16 +52,21 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
+      if (cached) return cached;
+
+      return fetch(event.request)
         .then((res) => {
-          if (res && res.status === 200 && res.type === 'basic') {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, res.clone()));
+          if (!res || res.status !== 200 || res.type !== 'basic') {
+            return res;
           }
+          // Clone respons secara synchronous sebelum di-return
+          const responseToCache = res.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
           return res;
         })
         .catch(() => cached);
-
-      return cached || networkFetch;
     })
   );
 });
