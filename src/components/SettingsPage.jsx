@@ -16,7 +16,8 @@ import {
   EyeOff, 
   ShieldCheck,
   Send,
-  Volume2
+  Volume2,
+  Radio
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useEvents } from '../context/EventContext';
@@ -28,7 +29,8 @@ import {
   requestNotificationPermission, 
   showSystemNotification,
   playCustomAudioNotification,
-  subscribeUserToPush
+  subscribeUserToPush,
+  broadcastTestNotificationToAll
 } from '../utils/notificationService';
 
 export default function SettingsPage() {
@@ -108,6 +110,24 @@ export default function SettingsPage() {
       showToast('Notifikasi percobaan telah dikirim!', 'success');
     } else {
       showToast('Gagal mengirim: Izinkan notifikasi di browser/HP Anda terlebih dahulu.', 'error');
+    }
+  };
+
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+
+  const handleBroadcastTest = async () => {
+    setBroadcastLoading(true);
+    // Also trigger local device sound/notification
+    showSystemNotification(
+      '📢 Tes Siaran: Jadwal Bakid Multimedia',
+      'Sinyal tes notifikasi serentak disiarkan ke seluruh perangkat terdaftar!'
+    );
+    const res = await broadcastTestNotificationToAll();
+    setBroadcastLoading(false);
+    if (res.success) {
+      showToast('Sinyal tes disiarkan ke seluruh anggota!', 'success');
+    } else {
+      showToast(res.message || 'Gagal menyiarkan tes notifikasi', 'error');
     }
   };
 
@@ -306,7 +326,7 @@ export default function SettingsPage() {
             className="h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center gap-1.5 transition-colors shadow-cf-card"
           >
             <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
-            <span>Tes Suara Audio</span>
+            <span>Tes Audio</span>
           </button>
 
           <button
@@ -315,8 +335,22 @@ export default function SettingsPage() {
             className="h-8 px-3 bg-[#F6F6F7] hover:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center gap-1.5 transition-colors"
           >
             <Send className="w-3.5 h-3.5 text-[#F6821F]" />
-            <span>Kirim Tes Notifikasi HP</span>
+            <span>Tes di HP Ini</span>
           </button>
+
+          {/* Admin Broadcast Test to All Devices */}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleBroadcastTest}
+              disabled={broadcastLoading}
+              className="h-8 px-3.5 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-cf-card"
+              title="Kirim notifikasi tes serentak ke semua HP anggota yang terdaftar"
+            >
+              <Radio className={`w-3.5 h-3.5 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
+              <span>{broadcastLoading ? 'Menyiarkan...' : 'Tes ke Semua Anggota'}</span>
+            </button>
+          )}
         </div>
       </div>
 

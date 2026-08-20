@@ -67,6 +67,40 @@ export async function onRequest(context) {
     }
   }
 
+  // 3. Broadcast Push Notification to All Devices
+  if (action === 'broadcast' && request.method === 'POST') {
+    try {
+      const payload = await request.json().catch(() => ({}));
+      const gasUrl = env.VITE_GAS_URL || 'https://script.google.com/macros/s/AKfycbw6_Ijo6Hu2XmyQ-6DYahv_Jr42S4BktcRtZLHnJpR6sEsQY9vJS6wlLld09aii4mNJTw/exec';
+
+      // Forward broadcast payload to Google Apps Script to log and dispatch
+      await fetch(`${gasUrl}?action=broadcastPushNotification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: payload.title || '📢 Tes Broadcast: Jadwal Bakid Multimedia',
+          body: payload.body || 'Uji coba transmisi notifikasi serentak ke seluruh tim multimedia.',
+          timestamp: new Date().toISOString()
+        })
+      }).catch((err) => {
+        console.warn('Broadcast to GAS failed:', err);
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Sinyal tes notifikasi serentak berhasil disiarkan ke seluruh perangkat terdaftar!'
+        }),
+        { headers: corsHeaders }
+      );
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ success: false, message: e.message }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+  }
+
   return new Response(
     JSON.stringify({ success: true, message: 'Push API endpoint active' }),
     { headers: corsHeaders }

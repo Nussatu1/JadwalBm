@@ -60,6 +60,23 @@ export async function subscribeUserToPush() {
   }
 }
 
+export async function broadcastTestNotificationToAll(title, body) {
+  try {
+    const res = await fetch('/api/push?action=broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: title || '📢 Tes Broadcast: Jadwal Bakid Multimedia',
+        body: body || 'Uji coba transmisi notifikasi serentak ke seluruh tim multimedia berhasil!'
+      })
+    });
+    const json = await res.json();
+    return json;
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+}
+
 let sharedAudio = null;
 let isAudioUnlocked = false;
 
