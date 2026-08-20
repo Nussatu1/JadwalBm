@@ -472,7 +472,7 @@ export default function SettingsPage() {
             </form>
 
             {/* Login Admin (Jika belum login) */}
-            {!isAdmin ? (
+            {!isAdmin && (
               <form onSubmit={handleAdminLogin} className="pt-3 border-t border-[#E5E7EB] space-y-2">
                 <label className="block text-[12px] font-medium text-[#0B0C0E]">
                   Masuk sebagai Admin
@@ -503,20 +503,6 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </form>
-            ) : (
-              <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between">
-                <span className="text-[12px] text-[#6B7280]">
-                  Keluar dari sesi admin saat ini:
-                </span>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="h-8 px-3 bg-white hover:bg-[#FDF1F2] text-[#E5484D] border border-[#FBD2D5] rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Keluar Admin</span>
-                </button>
-              </div>
             )}
           </div>
         )}
@@ -655,6 +641,20 @@ export default function SettingsPage() {
             : 'Mode Demo / Offline (Local Storage).'}
         </p>
       </div>
+
+      {/* 5. TOMBOL KELUAR ADMIN (SELALU TERLIHAT DI PALING BAWAH) */}
+      {isAdmin && (
+        <div className="pt-2 pb-4">
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full h-10 px-4 bg-white hover:bg-[#FDF1F2] active:bg-[#FCE8EA] text-[#E5484D] hover:text-[#B9252A] border border-[#FBD2D5] rounded-[8px] text-[13px] font-semibold flex items-center justify-center gap-2 transition-all shadow-cf-card"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Keluar dari Hak Akses Admin</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
