@@ -17,7 +17,9 @@ import {
   ShieldCheck,
   Send,
   Volume2,
-  Radio
+  Radio,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useEvents } from '../context/EventContext';
@@ -58,6 +60,7 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isConfigExpanded, setIsConfigExpanded] = useState(false);
 
   useEffect(() => {
     if (config?.whatsapp_group_link) {
@@ -499,89 +502,109 @@ export default function SettingsPage() {
 
       {/* 3. PENGATURAN DATABASE & KONFIGURASI (ADMIN ONLY / GENERAL) */}
       {isAdmin && (
-        <form onSubmit={handleSaveAppConfig} className="bg-white rounded-[8px] border border-[#E5E7EB] p-4 space-y-4 shadow-cf-card">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-[6px] bg-[#F6F6F7] text-[#0B0C0E] flex items-center justify-center">
-              <Key className="w-4 h-4 text-[#F6821F]" />
-            </div>
-            <div>
-              <h3 className="text-[14px] font-semibold text-[#0B0C0E]">
-                Konfigurasi WhatsApp & Password Admin
-              </h3>
-              <p className="text-[11px] text-[#6B7280]">
-                Ubah link broadcast dan perbarui kata sandi admin
-              </p>
-            </div>
-          </div>
-
-          {/* Link Grup WA */}
-          <div className="space-y-1 pt-1">
-            <label className="block text-[12px] font-medium text-[#0B0C0E] flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5 text-[#0F9D58]" />
-              <span>Link Grup WhatsApp Bakid Multimedia</span>
-            </label>
-            <input
-              type="url"
-              placeholder="https://chat.whatsapp.com/..."
-              value={waLink}
-              onChange={e => setWaLink(e.target.value)}
-              className="w-full h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[12px] font-mono text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
-            />
-          </div>
-
-          {/* Ganti Password */}
-          <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
-            <label className="block text-[12px] font-medium text-[#0B0C0E]">
-              Ganti Password Admin (Opsional)
-            </label>
-            <div className="relative">
-              <input
-                type={showNewPassword ? 'text' : 'password'}
-                placeholder="Password baru (kosongkan jika tidak diubah)"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
-              />
-              <button
-                type="button"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
-              >
-                {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              </button>
+        <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-cf-card overflow-hidden">
+          {/* Header Card (Klik untuk Ciutkan / Buka) */}
+          <button
+            type="button"
+            onClick={() => setIsConfigExpanded(!isConfigExpanded)}
+            className="w-full p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F6F6F7]/60 transition-colors"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-[6px] bg-[#F6F6F7] text-[#0B0C0E] flex items-center justify-center shrink-0 border border-[#E5E7EB]">
+                <Key className="w-4 h-4 text-[#F6821F]" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[14px] font-semibold text-[#0B0C0E] truncate">
+                  Konfigurasi WhatsApp & Password Admin
+                </h3>
+                <p className="text-[11px] text-[#6B7280] truncate">
+                  Ubah link broadcast dan perbarui kata sandi admin
+                </p>
+              </div>
             </div>
 
-            {newPassword && (
-              <div className="relative">
+            <div className="w-7 h-7 rounded-[6px] border border-[#E5E7EB] bg-white flex items-center justify-center text-[#6B7280] shrink-0 ml-2">
+              {isConfigExpanded ? (
+                <ChevronUp className="w-4 h-4 text-[#0B0C0E]" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+              )}
+            </div>
+          </button>
+
+          {/* Form Body (Hanya terlihat jika dibuka) */}
+          {isConfigExpanded && (
+            <form onSubmit={handleSaveAppConfig} className="p-4 pt-3 space-y-4 border-t border-[#E5E7EB]">
+              {/* Link Grup WA */}
+              <div className="space-y-1">
+                <label className="block text-[12px] font-medium text-[#0B0C0E] flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-[#0F9D58]" />
+                  <span>Link Grup WhatsApp Bakid Multimedia</span>
+                </label>
                 <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Konfirmasi password baru"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                  type="url"
+                  placeholder="https://chat.whatsapp.com/..."
+                  value={waLink}
+                  onChange={e => setWaLink(e.target.value)}
+                  className="w-full h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[12px] font-mono text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                 />
+              </div>
+
+              {/* Ganti Password */}
+              <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
+                <label className="block text-[12px] font-medium text-[#0B0C0E]">
+                  Ganti Password Admin (Opsional)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder="Password baru (kosongkan jika tidak diubah)"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
+                  >
+                    {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                {newPassword && (
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Konfirmasi password baru"
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 flex justify-end">
                 <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
+                  type="submit"
+                  disabled={submitting}
+                  className="h-8 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors disabled:opacity-50"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{submitting ? 'Menyimpan...' : 'Simpan Konfigurasi'}</span>
                 </button>
               </div>
-            )}
-          </div>
-
-          <div className="pt-2 flex justify-end">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="h-8 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors disabled:opacity-50"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{submitting ? 'Menyimpan...' : 'Simpan Konfigurasi'}</span>
-            </button>
-          </div>
-        </form>
+            </form>
+          )}
+        </div>
       )}
 
       {/* 4. STATUS BACKEND & SINKRONISASI */}
