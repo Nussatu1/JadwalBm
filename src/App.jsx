@@ -19,6 +19,7 @@ import SettingsModal from './components/SettingsModal';
 import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
 import SplashScreen from './components/SplashScreen';
+import InstallPrompt from './components/InstallPrompt';
 
 export default function App() {
   const { isAdmin } = useAuth();
@@ -71,6 +72,9 @@ export default function App() {
       {showSplash && (
         <SplashScreen onFinish={() => setShowSplash(false)} duration={2000} />
       )}
+
+      {/* PWA Install Banner */}
+      <InstallPrompt />
 
       {/* Toast Notification Container */}
       <Toast />
