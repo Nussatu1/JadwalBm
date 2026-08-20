@@ -88,15 +88,33 @@ export default function CalendarView({ onSelectEvent }) {
     return count;
   }, [events, currentYear, currentMonth]);
 
+  // Generate full calendar grid including previous & next month dates
   const daysInMonth = useMemo(() => {
     const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
     const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const prevMonthTotalDays = new Date(currentYear, currentMonth, 0).getDate();
 
     const days = [];
-    for (let i = 0; i < firstDayIndex; i++) {
-      days.push({ day: null, dateStr: null });
+
+    // 1. Trailing days from previous month (samar/muted)
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const dayNum = prevMonthTotalDays - i;
+      const prevDate = new Date(currentYear, currentMonth - 1, dayNum);
+      const mFormatted = String(prevDate.getMonth() + 1).padStart(2, '0');
+      const dFormatted = String(dayNum).padStart(2, '0');
+      const dateStr = `${prevDate.getFullYear()}-${mFormatted}-${dFormatted}`;
+      const dayEvents = eventsByDate[dateStr] || [];
+
+      days.push({
+        day: dayNum,
+        dateStr,
+        isOtherMonth: true,
+        events: dayEvents,
+        hasEvents: dayEvents.length > 0
+      });
     }
 
+    // 2. Days in current month
     for (let d = 1; d <= totalDays; d++) {
       const monthFormatted = String(currentMonth + 1).padStart(2, '0');
       const dayFormatted = String(d).padStart(2, '0');
@@ -106,6 +124,26 @@ export default function CalendarView({ onSelectEvent }) {
       days.push({
         day: d,
         dateStr,
+        isOtherMonth: false,
+        events: dayEvents,
+        hasEvents: dayEvents.length > 0
+      });
+    }
+
+    // 3. Leading days from next month to complete the 7-column grid (samar/muted)
+    const totalCells = Math.ceil(days.length / 7) * 7;
+    const nextDaysNeeded = totalCells - days.length;
+    for (let d = 1; d <= nextDaysNeeded; d++) {
+      const nextDate = new Date(currentYear, currentMonth + 1, d);
+      const mFormatted = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const dFormatted = String(d).padStart(2, '0');
+      const dateStr = `${nextDate.getFullYear()}-${mFormatted}-${dFormatted}`;
+      const dayEvents = eventsByDate[dateStr] || [];
+
+      days.push({
+        day: d,
+        dateStr,
+        isOtherMonth: true,
         events: dayEvents,
         hasEvents: dayEvents.length > 0
       });
@@ -126,7 +164,7 @@ export default function CalendarView({ onSelectEvent }) {
       {/* ── Main Calendar Card ── */}
       <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden">
         {/* Header: Month & Year Navigator */}
-        <div className="p-4 pb-3 flex items-center justify-between border-b border-[#E5E7EB]/60 bg-gradient-to-b from-[#FAFAFA] to-white">
+        <div className="p-4 pb-3 flex items-center justify-between border-b border-[#E5E7EB] bg-gradient-to-b from-[#FAFAFA] to-white">
           <div className="flex items-center gap-2.5">
             <div className="flex items-baseline gap-2">
               <h2 className="text-[17px] font-bold text-[#0B0C0E] tracking-tight">
@@ -179,11 +217,11 @@ export default function CalendarView({ onSelectEvent }) {
 
         {/* Days of Week Subheader Bar */}
         <div className="px-3 pt-3">
-          <div className="grid grid-cols-7 gap-1 text-center bg-[#F9FAFB] rounded-[7px] py-1.5 border border-[#F3F4F6]">
+          <div className="grid grid-cols-7 gap-px bg-[#E5E7EB] border border-[#E5E7EB] rounded-t-[7px] overflow-hidden text-center">
             {HARI_SINGKAT.map((h, idx) => (
               <div
                 key={idx}
-                className={`text-[11px] font-semibold tracking-wider uppercase ${
+                className={`text-[11px] font-semibold tracking-wider uppercase py-1.5 bg-[#F9FAFB] ${
                   h.isWeekend
                     ? 'text-[#E5484D]'
                     : h.isSpecial
@@ -197,38 +235,28 @@ export default function CalendarView({ onSelectEvent }) {
           </div>
         </div>
 
-        {/* Calendar Dates Grid */}
-        <div className="p-3 pt-2">
-          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+        {/* Calendar Dates Grid with Structured Grid Borders */}
+        <div className="px-3 pb-3">
+          <div className="grid grid-cols-7 gap-px bg-[#E5E7EB] border-x border-b border-[#E5E7EB] rounded-b-[7px] overflow-hidden shadow-2xs">
             {daysInMonth.map((item, idx) => {
-              if (!item.day) {
-                return (
-                  <div 
-                    key={`empty-${idx}`} 
-                    className="h-11 sm:h-13 rounded-[7px] bg-transparent opacity-0 pointer-events-none" 
-                  />
-                );
-              }
-
               const isToday = item.dateStr === todayStr;
               const isSelected = item.dateStr === selectedDateStr;
               const hasEvents = item.hasEvents;
-              const dayOfWeek = new Date(currentYear, currentMonth, item.day).getDay();
-              const isSunday = dayOfWeek === 0;
+              const isOther = item.isOtherMonth;
 
               return (
                 <button
                   type="button"
-                  key={item.dateStr}
+                  key={item.dateStr || idx}
                   onClick={() => setSelectedDateStr(item.dateStr)}
-                  className={`group relative h-11 sm:h-13 rounded-[8px] flex flex-col items-center justify-between p-1 sm:p-1.5 transition-all duration-150 border select-none ${
+                  className={`group relative h-11 sm:h-13 flex flex-col items-center justify-between p-1 sm:p-1.5 transition-all duration-150 select-none ${
                     isSelected
-                      ? 'bg-[#0B0C0E] border-[#0B0C0E] text-white font-bold shadow-md shadow-black/10 scale-[1.02] z-10'
+                      ? 'bg-[#0B0C0E] text-white font-bold z-10'
                       : isToday
-                      ? 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-bold ring-1 ring-[#F6821F]/40'
-                      : hasEvents
-                      ? 'bg-white hover:bg-[#F9FAFB] border-[#E5E7EB] text-[#0B0C0E] hover:border-[#D1D5DB]'
-                      : 'bg-white hover:bg-[#F9FAFB] border-transparent hover:border-[#E5E7EB] text-[#374151]'
+                      ? 'bg-[#FFF5EA] text-[#DB6E0F] font-bold'
+                      : isOther
+                      ? 'bg-[#FAFAFA] hover:bg-[#F3F4F6] text-[#9CA3AF]'
+                      : 'bg-white hover:bg-[#F9FAFB] text-[#0B0C0E]'
                   }`}
                 >
                   {/* Date Number */}
@@ -237,20 +265,22 @@ export default function CalendarView({ onSelectEvent }) {
                       ? 'text-white font-bold'
                       : isToday
                       ? 'text-[#DB6E0F] font-bold'
-                      : isSunday
-                      ? 'text-[#E5484D]'
+                      : isOther
+                      ? 'text-[#9CA3AF] opacity-60'
                       : 'text-[#0B0C0E]'
                   }`}>
                     {item.day}
                   </span>
 
-                  {/* Event Indicator Pills / Dots */}
+                  {/* Event Indicator Dots */}
                   <div className="w-full flex items-center justify-center gap-0.5 min-h-[5px] mb-0.5">
                     {hasEvents && (
                       <div className="flex items-center gap-0.5">
                         {item.events.slice(0, 3).map((ev, eIdx) => {
                           let dotBg = isSelected
                             ? 'bg-white'
+                            : isOther
+                            ? 'bg-[#9CA3AF]/60'
                             : ev.status === 'Berlangsung'
                             ? 'bg-[#F59E0B]'
                             : ev.status === 'Batal'
@@ -267,7 +297,7 @@ export default function CalendarView({ onSelectEvent }) {
                           );
                         })}
                         {item.events.length > 3 && (
-                          <span className={`text-[8px] font-bold leading-none ${isSelected ? 'text-white' : 'text-[#6B7280]'}`}>
+                          <span className={`text-[8px] font-bold leading-none ${isSelected ? 'text-white' : isOther ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
                             +
                           </span>
                         )}
