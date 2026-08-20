@@ -8,23 +8,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] py-1 max-w-lg mx-auto sm:border-x sm:rounded-t-[8px]">
       <div className="flex items-center justify-around h-14 relative px-1">
-        {/* Tab 1: Daftar Acara */}
-        <button
-          type="button"
-          onClick={() => setActiveTab('list')}
-          className={`flex-1 h-full flex flex-col items-center justify-center min-w-[44px] min-h-[44px] transition-colors ${
-            activeTab === 'list'
-              ? 'text-[#F6821F]'
-              : 'text-[#6B7280] hover:text-[#0B0C0E]'
-          }`}
-        >
-          <ListFilter className="w-5 h-5 stroke-[1.75]" />
-          <span className={`text-[11px] mt-1 ${activeTab === 'list' ? 'font-medium' : 'font-normal'}`}>
-            Daftar
-          </span>
-        </button>
-
-        {/* Tab 2: Kalender */}
+        {/* Tab 1: Kalender */}
         <button
           type="button"
           onClick={() => setActiveTab('calendar')}
@@ -40,13 +24,29 @@ export default function BottomNav({ activeTab, setActiveTab }) {
           </span>
         </button>
 
-        {/* Tab 3: FAB Tambah Acara (Admin Only - Elevated Floating Circle) */}
+        {/* Tab 2: Daftar Acara */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('list')}
+          className={`flex-1 h-full flex flex-col items-center justify-center min-w-[44px] min-h-[44px] transition-colors ${
+            activeTab === 'list'
+              ? 'text-[#F6821F]'
+              : 'text-[#6B7280] hover:text-[#0B0C0E]'
+          }`}
+        >
+          <ListFilter className="w-5 h-5 stroke-[1.75]" />
+          <span className={`text-[11px] mt-1 ${activeTab === 'list' ? 'font-medium' : 'font-normal'}`}>
+            Daftar
+          </span>
+        </button>
+
+        {/* Tab 3: FAB Tambah Acara (Admin Only - Elevated Floating Circle tanpa label) */}
         {isAdmin && (
-          <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="flex-1 flex items-center justify-center">
             <button
               type="button"
               onClick={() => setActiveTab('tambah')}
-              className={`w-12 h-12 rounded-full flex items-center justify-center -translate-y-3.5 border-4 border-white shadow-lg transition-all duration-200 ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center -translate-y-3 border-4 border-white shadow-lg transition-all duration-200 ${
                 activeTab === 'tambah'
                   ? 'bg-[#0B0C0E] text-white scale-105 ring-2 ring-[#F6821F]'
                   : 'bg-[#F6821F] hover:bg-[#DB6E0F] active:scale-95 text-white shadow-[#F6821F]/35'
@@ -56,9 +56,6 @@ export default function BottomNav({ activeTab, setActiveTab }) {
             >
               <Plus className="w-6 h-6 stroke-[2.5]" />
             </button>
-            <span className={`text-[10px] -mt-2 font-medium ${activeTab === 'tambah' ? 'text-[#F6821F]' : 'text-[#6B7280]'}`}>
-              Tambah
-            </span>
           </div>
         )}
 
