@@ -217,11 +217,11 @@ export default function CalendarView({ onSelectEvent }) {
 
         {/* Days of Week Subheader Bar */}
         <div className="px-3 pt-3">
-          <div className="grid grid-cols-7 gap-px bg-[#E5E7EB] border border-[#E5E7EB] rounded-t-[7px] overflow-hidden text-center">
+          <div className="grid grid-cols-7 gap-1 text-center bg-[#F9FAFB] rounded-[7px] py-1.5 border border-[#F3F4F6]">
             {HARI_SINGKAT.map((h, idx) => (
               <div
                 key={idx}
-                className={`text-[11px] font-semibold tracking-wider uppercase py-1.5 bg-[#F9FAFB] ${
+                className={`text-[11px] font-semibold tracking-wider uppercase ${
                   h.isWeekend
                     ? 'text-[#E5484D]'
                     : h.isSpecial
@@ -235,9 +235,9 @@ export default function CalendarView({ onSelectEvent }) {
           </div>
         </div>
 
-        {/* Calendar Dates Grid with Structured Grid Borders */}
-        <div className="px-3 pb-3">
-          <div className="grid grid-cols-7 gap-px bg-[#E5E7EB] border-x border-b border-[#E5E7EB] rounded-b-[7px] overflow-hidden shadow-2xs">
+        {/* Calendar Dates Grid with Rounded Individual Cells */}
+        <div className="p-3 pt-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
             {daysInMonth.map((item, idx) => {
               const isToday = item.dateStr === todayStr;
               const isSelected = item.dateStr === selectedDateStr;
@@ -249,14 +249,14 @@ export default function CalendarView({ onSelectEvent }) {
                   type="button"
                   key={item.dateStr || idx}
                   onClick={() => setSelectedDateStr(item.dateStr)}
-                  className={`group relative h-11 sm:h-13 flex flex-col items-center justify-between p-1 sm:p-1.5 transition-all duration-150 select-none ${
+                  className={`group relative h-11 sm:h-13 rounded-[7px] sm:rounded-[8px] flex flex-col items-center justify-between p-1 sm:p-1.5 transition-all duration-150 border select-none ${
                     isSelected
-                      ? 'bg-[#F6821F] text-white font-bold z-10 shadow-sm'
+                      ? 'bg-[#F6821F] border-[#F6821F] text-white font-bold shadow-sm scale-[1.02] z-10'
                       : isToday
-                      ? 'bg-[#FFF5EA] text-[#DB6E0F] font-bold ring-1 ring-inset ring-[#FBD6B0]'
+                      ? 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-bold'
                       : isOther
-                      ? 'bg-[#FAFAFA] hover:bg-[#F3F4F6] text-[#9CA3AF]'
-                      : 'bg-white hover:bg-[#F9FAFB] text-[#0B0C0E]'
+                      ? 'bg-[#FAFAFA] border-[#F3F4F6] hover:bg-[#F3F4F6] text-[#9CA3AF]'
+                      : 'bg-white border-[#E5E7EB] hover:border-[#D1D5DB] hover:bg-[#F9FAFB] text-[#0B0C0E]'
                   }`}
                 >
                   {/* Date Number */}
