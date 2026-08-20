@@ -509,6 +509,11 @@ function handleCreateEvent(data) {
 
   sheet.appendRow(newRow);
 
+  // Otomatis daftarkan peralatan baru ke sheet Peralatan jika belum ada
+  if (data.alat_media) {
+    autoRegisterPeralatan(data.alat_media);
+  }
+
   return {
     success: true,
     message: 'Acara berhasil ditambahkan!',
@@ -544,6 +549,11 @@ function handleUpdateEvent(id, data) {
       sheet.getRange(rowIndex, 13).setValue(data.link_dokumentasi !== undefined ? data.link_dokumentasi : rows[i][12]);
       sheet.getRange(rowIndex, 15).setValue(now);
 
+      // Otomatis daftarkan peralatan baru ke sheet Peralatan jika ada
+      if (data.alat_media) {
+        autoRegisterPeralatan(data.alat_media);
+      }
+
       return {
         success: true,
         message: 'Acara berhasil diperbarui!',
@@ -553,6 +563,34 @@ function handleUpdateEvent(id, data) {
   }
 
   return { success: false, message: 'Acara dengan ID ' + id + ' tidak ditemukan.', data: null };
+}
+
+/**
+ * Helper: Otomatis daftarkan nama peralatan baru ke sheet Peralatan jika belum ada
+ */
+function autoRegisterPeralatan(alatMediaStr) {
+  if (!alatMediaStr) return;
+  const items = String(alatMediaStr).split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  if (items.length === 0) return;
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAMES.PERALATAN);
+  if (!sheet) return;
+
+  const values = sheet.getDataRange().getValues();
+  const existingNames = [];
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][1]) {
+      existingNames.push(String(values[i][1]).trim().toLowerCase());
+    }
+  }
+
+  items.forEach(function(nama) {
+    if (existingNames.indexOf(nama.toLowerCase()) === -1) {
+      sheet.appendRow([generateUUID(), nama, 'Lainnya', true]);
+      existingNames.push(nama.toLowerCase());
+    }
+  });
 }
 
 function handleDeleteEvent(id) {
