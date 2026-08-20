@@ -33,29 +33,52 @@ function urlBase64ToUint8Array(base64String) {
 
 export async function subscribeUserToPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    return { success: false, message: 'Push Manager not supported' };
+    return { success: false, message: 'Push Manager tidak didukung di browser ini' };
   }
   try {
-    let reg = await navigator.serviceWorker.getRegistration();
-    if (!reg) {
+    // 1. Pastikan Service Worker sudah siap
+    let reg;
+    try {
+      reg = await navigator.serviceWorker.ready;
+    } catch (e) {
       reg = await navigator.serviceWorker.register('/sw.js');
+      reg = await navigator.serviceWorker.ready;
     }
+
+    if (!reg || !reg.pushManager) {
+      return { success: false, message: 'PushManager tidak tersedia di Service Worker' };
+    }
+
+    // 2. Periksa & refresh subscription lama dengan VAPID key baru
+    let subscription = await reg.pushManager.getSubscription();
     const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-    const subscription = await reg.pushManager.subscribe({
+
+    if (subscription) {
+      try {
+        await subscription.unsubscribe();
+      } catch (err) {}
+    }
+
+    subscription = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: convertedKey
     });
 
-    // Send subscription to Cloudflare Pages Push API
-    await fetch('/api/push?action=subscribe', {
+    // 3. Serialisasi dan kirim token ke server Cloudflare & Google Sheets
+    const subJson = subscription.toJSON ? subscription.toJSON() : JSON.parse(JSON.stringify(subscription));
+
+    const res = await fetch('/api/push?action=subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(subscription)
+      body: JSON.stringify(subJson)
     });
 
-    return { success: true, subscription };
+    const resData = await res.json().catch(() => ({ success: true }));
+    console.log('Push subscription tersinkronkan ke server:', resData);
+
+    return { success: true, subscription: subJson, data: resData };
   } catch (e) {
-    console.warn('subscribeUserToPush error:', e);
+    console.error('subscribeUserToPush error:', e);
     return { success: false, message: e.message };
   }
 }

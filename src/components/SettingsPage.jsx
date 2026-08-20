@@ -131,6 +131,18 @@ export default function SettingsPage() {
     }
   };
 
+  const [syncingPush, setSyncingPush] = useState(false);
+  const handleSyncPushToken = async () => {
+    setSyncingPush(true);
+    const res = await subscribeUserToPush();
+    setSyncingPush(false);
+    if (res.success) {
+      showToast('Perangkat HP ini berhasil terdaftar di server push!', 'success');
+    } else {
+      showToast(res.message || 'Gagal mendaftarkan push', 'error');
+    }
+  };
+
   // Handle Save Team Member Profile
   const handleSaveProfile = (e) => {
     e.preventDefault();
@@ -317,6 +329,18 @@ export default function SettingsPage() {
 
         {/* Test Audio & Notification Action Buttons */}
         <div className="pt-2 flex flex-wrap items-center justify-end gap-2">
+          {/* Daftarkan / Sinkronkan Token HP Ini */}
+          <button
+            type="button"
+            onClick={handleSyncPushToken}
+            disabled={syncingPush}
+            className="h-8 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] text-[#DB6E0F] border border-[#FBD6B0] text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors shadow-cf-card"
+            title="Daftarkan token perangkat HP ini ke server agar menerima notifikasi saat aplikasi ditutup"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
+            <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
