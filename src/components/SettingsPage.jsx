@@ -204,13 +204,13 @@ export default function SettingsPage() {
   const isConnected = api.isConfigured();
 
   return (
-    <div className="space-y-3 max-w-2xl mx-auto pb-8 animate-cf-modal">
+    <div className="space-y-3.5 max-w-2xl mx-auto pb-8 animate-cf-modal">
       {/* ── Page Header ── */}
       <div className="bg-white rounded-[10px] border border-[#E5E7EB] p-4 shadow-cf-card flex items-center justify-between gap-3">
         <div>
           <h2 className="text-[16px] font-bold text-[#0B0C0E] flex items-center gap-2">
             <Sliders className="w-4 h-4 text-[#F6821F]" />
-            <span>Pengaturan Aplikasi</span>
+            <span>Pengaturan</span>
           </h2>
           <p className="text-[12px] text-[#6B7280] mt-0.5">
             Kelola notifikasi, profil penugasan, dan konfigurasi sistem.
@@ -225,436 +225,439 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* ── 1. NOTIFIKASI PUSH OTOMATIS ── */}
-      <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden transition-all">
-        {/* Accordion Trigger Header */}
-        <div
-          onClick={() => setIsNotifExpanded(!isNotifExpanded)}
-          className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-[7px] bg-[#FFF5EA] text-[#F6821F] flex items-center justify-center shrink-0 border border-[#FBD6B0]/60 shadow-2xs">
-              <Bell className="w-4 h-4" />
+      {/* ── UNIFIED SETTINGS CONTAINER (DIPISAHKAN GARIS SEPERTI PENGATURAN MOBILE NATIVE) ── */}
+      <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden divide-y divide-[#E5E7EB]">
+        {/* ── 1. NOTIFIKASI PUSH OTOMATIS ── */}
+        <div>
+          {/* Accordion Row Trigger */}
+          <div
+            onClick={() => setIsNotifExpanded(!isNotifExpanded)}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-[7px] bg-[#FFF5EA] text-[#F6821F] flex items-center justify-center shrink-0 border border-[#FBD6B0]/60 shadow-2xs">
+                <Bell className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
+                  Notifikasi Push Otomatis
+                </h3>
+                <p className="text-[11px] text-[#6B7280] truncate">
+                  Pengingat di layar HP tanpa perlu buka web
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
-                Notifikasi Push Otomatis
-              </h3>
-              <p className="text-[11px] text-[#6B7280] truncate">
-                Pengingat di layar HP tanpa perlu buka web
-              </p>
+
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleMasterNotif();
+                }}
+                className={`h-6.5 px-2.5 rounded-[5px] text-[11.5px] font-semibold transition-colors ${
+                  notifSettings.enabled
+                    ? 'bg-[#0F9D58] hover:bg-[#0B8043] text-white shadow-2xs'
+                    : 'bg-[#F3F4F6] border border-[#E5E7EB] text-[#6B7280] hover:text-[#0B0C0E]'
+                }`}
+              >
+                {notifSettings.enabled ? 'Aktif' : 'Nonaktif'}
+              </button>
+
+              <ChevronDown 
+                className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
+                  isNotifExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
+                }`} 
+              />
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleMasterNotif();
-              }}
-              className={`h-6.5 px-2.5 rounded-[5px] text-[11.5px] font-semibold transition-colors ${
-                notifSettings.enabled
-                  ? 'bg-[#0F9D58] hover:bg-[#0B8043] text-white shadow-2xs'
-                  : 'bg-[#F3F4F6] border border-[#E5E7EB] text-[#6B7280] hover:text-[#0B0C0E]'
-              }`}
-            >
-              {notifSettings.enabled ? 'Aktif' : 'Nonaktif'}
-            </button>
+          {/* Content Body */}
+          {isNotifExpanded && (
+            <div className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/50">
+              {/* Sub-toggles */}
+              <div className="space-y-2">
+                {/* H-1 */}
+                <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
+                  <div className="space-y-0.5">
+                    <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                      Pengingat H-1 (Besok Ada Acara)
+                    </p>
+                    <p className="text-[11px] text-[#6B7280]">
+                      Dikirimkan 1 hari sebelum agenda liputan dimulai
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    disabled={!notifSettings.enabled}
+                    checked={notifSettings.notifyHMinus1}
+                    onChange={() => handleToggleSetting('notifyHMinus1')}
+                    className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+                  />
+                </label>
 
-            <ChevronDown 
-              className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
-                isNotifExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
-              }`} 
-            />
-          </div>
-        </div>
+                {/* Start Event */}
+                <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
+                  <div className="space-y-0.5">
+                    <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                      Acara Hari Ini Mulai (On-Air)
+                    </p>
+                    <p className="text-[11px] text-[#6B7280]">
+                      Dikirim saat jam mulai acara telah tiba di hari H
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    disabled={!notifSettings.enabled}
+                    checked={notifSettings.notifyEventStart}
+                    onChange={() => handleToggleSetting('notifyEventStart')}
+                    className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+                  />
+                </label>
 
-        {/* Content Body */}
-        {isNotifExpanded && (
-          <div className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/40">
-            {/* Sub-toggles */}
-            <div className="space-y-2">
-              {/* H-1 */}
-              <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
-                <div className="space-y-0.5">
-                  <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
-                    Pengingat H-1 (Besok Ada Acara)
-                  </p>
-                  <p className="text-[11px] text-[#6B7280]">
-                    Dikirimkan 1 hari sebelum agenda liputan dimulai
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  disabled={!notifSettings.enabled}
-                  checked={notifSettings.notifyHMinus1}
-                  onChange={() => handleToggleSetting('notifyHMinus1')}
-                  className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
-                />
-              </label>
+                {/* End Event */}
+                <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
+                  <div className="space-y-0.5">
+                    <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                      Acara Selesai (Manual / Sesuai Jam)
+                    </p>
+                    <p className="text-[11px] text-[#6B7280]">
+                      Dikirim saat acara ditandai selesai atau melewati jam selesai
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    disabled={!notifSettings.enabled}
+                    checked={notifSettings.notifyEventEnd}
+                    onChange={() => handleToggleSetting('notifyEventEnd')}
+                    className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+                  />
+                </label>
 
-              {/* Start Event */}
-              <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
-                <div className="space-y-0.5">
-                  <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
-                    Acara Hari Ini Mulai (On-Air)
-                  </p>
-                  <p className="text-[11px] text-[#6B7280]">
-                    Dikirim saat jam mulai acara telah tiba di hari H
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  disabled={!notifSettings.enabled}
-                  checked={notifSettings.notifyEventStart}
-                  onChange={() => handleToggleSetting('notifyEventStart')}
-                  className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
-                />
-              </label>
-
-              {/* End Event */}
-              <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
-                <div className="space-y-0.5">
-                  <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
-                    Acara Selesai (Manual / Sesuai Jam)
-                  </p>
-                  <p className="text-[11px] text-[#6B7280]">
-                    Dikirim saat acara ditandai selesai atau melewati jam selesai
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  disabled={!notifSettings.enabled}
-                  checked={notifSettings.notifyEventEnd}
-                  onChange={() => handleToggleSetting('notifyEventEnd')}
-                  className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
-                />
-              </label>
-
-              {/* Custom Sound Toggle */}
-              <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB] pt-2 border-t border-[#F3F4F6]">
-                <div className="space-y-0.5">
-                  <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors flex items-center gap-1.5">
-                    <Volume2 className="w-3.5 h-3.5 text-[#F6821F]" />
-                    <span>Gunakan Nada Kustom (notif.mp3)</span>
-                  </p>
-                  <p className="text-[11px] text-[#6B7280]">
-                    Memutar audio notif.mp3 khusus saat notifikasi masuk
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  disabled={!notifSettings.enabled}
-                  checked={notifSettings.customAudio !== false}
-                  onChange={() => handleToggleSetting('customAudio')}
-                  className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
-                />
-              </label>
-            </div>
-
-            {/* Pusat Uji Coba & Sinkronisasi */}
-            <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
-              <span className="text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider">
-                Pusat Uji Coba & Sinkronisasi
-              </span>
-
-              {/* Quick Action Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={handleSyncPushToken}
-                  disabled={syncingPush}
-                  className="h-8.5 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] text-[#DB6E0F] border border-[#FBD6B0] text-[11.5px] font-medium rounded-[6px] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
-                  <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    playCustomAudioNotification();
-                    showToast('Memutar suara notif.mp3 🔊', 'info');
-                  }}
-                  className="h-8.5 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[11.5px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
-                >
-                  <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
-                  <span>Tes Audio</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleTestNotification}
-                  className="h-8.5 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[11.5px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
-                >
-                  <Send className="w-3.5 h-3.5 text-[#2E7DD1]" />
-                  <span>Tes di HP Ini</span>
-                </button>
+                {/* Custom Sound Toggle */}
+                <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB] pt-2 border-t border-[#F3F4F6]">
+                  <div className="space-y-0.5">
+                    <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors flex items-center gap-1.5">
+                      <Volume2 className="w-3.5 h-3.5 text-[#F6821F]" />
+                      <span>Gunakan Nada Kustom (notif.mp3)</span>
+                    </p>
+                    <p className="text-[11px] text-[#6B7280]">
+                      Memutar audio notif.mp3 khusus saat notifikasi masuk
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    disabled={!notifSettings.enabled}
+                    checked={notifSettings.customAudio !== false}
+                    onChange={() => handleToggleSetting('customAudio')}
+                    className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+                  />
+                </label>
               </div>
 
-              {/* Admin Broadcast Button */}
-              {isAdmin && (
-                <div className="pt-1.5 space-y-1">
+              {/* Pusat Uji Coba & Sinkronisasi */}
+              <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
+                <span className="text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider">
+                  Pusat Uji Coba & Sinkronisasi
+                </span>
+
+                {/* Quick Action Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={handleBroadcastTest}
-                    disabled={broadcastLoading}
-                    className="w-full h-9.5 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12px] font-semibold rounded-[6px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-cf-card"
+                    onClick={handleSyncPushToken}
+                    disabled={syncingPush}
+                    className="h-8.5 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] text-[#DB6E0F] border border-[#FBD6B0] text-[11.5px] font-medium rounded-[6px] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                   >
-                    <Radio className={`w-4 h-4 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
-                    <span>{broadcastLoading ? 'Menyiarkan ke Seluruh Perangkat...' : 'Siarkan Tes Notifikasi ke Semua Anggota'}</span>
+                    <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
+                    <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
                   </button>
-                  <p className="text-[10.5px] text-[#6B7280] text-center">
-                    Mengirim sinyal push serentak ke semua perangkat yang terdaftar di server.
-                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playCustomAudioNotification();
+                      showToast('Memutar suara notif.mp3 🔊', 'info');
+                    }}
+                    className="h-8.5 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[11.5px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
+                    <span>Tes Audio</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleTestNotification}
+                    className="h-8.5 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[11.5px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Send className="w-3.5 h-3.5 text-[#2E7DD1]" />
+                    <span>Tes di HP Ini</span>
+                  </button>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* ── 2. PROFIL TIM & AKSES ADMIN ── */}
-      <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden transition-all">
-        {/* Accordion Trigger Header */}
-        <div
-          onClick={() => setIsProfileExpanded(!isProfileExpanded)}
-          className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-[7px] bg-[#EEF6FF] text-[#2E7DD1] flex items-center justify-center shrink-0 border border-[#C8E0FB] shadow-2xs">
-              <User className="w-4 h-4" />
+                {/* Admin Broadcast Button */}
+                {isAdmin && (
+                  <div className="pt-1.5 space-y-1">
+                    <button
+                      type="button"
+                      onClick={handleBroadcastTest}
+                      disabled={broadcastLoading}
+                      className="w-full h-9.5 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12px] font-semibold rounded-[6px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-cf-card"
+                    >
+                      <Radio className={`w-4 h-4 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
+                      <span>{broadcastLoading ? 'Menyiarkan ke Seluruh Perangkat...' : 'Siarkan Tes Notifikasi ke Semua Anggota'}</span>
+                    </button>
+                    <p className="text-[10.5px] text-[#6B7280] text-center">
+                      Mengirim sinyal push serentak ke semua perangkat yang terdaftar di server.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="min-w-0">
-              <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
-                Status & Personalisasi Profil
-              </h3>
-              <p className="text-[11px] text-[#6B7280] truncate">
-                {isAdmin ? 'Hak Akses Admin Aktif' : 'Mode Anggota Tim / Penonton'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 ml-2">
-            {isAdmin ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DB6E0F] bg-[#FFF5EA] border border-[#FBD6B0] px-2 py-0.5 rounded-[5px]">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#F6821F]" />
-                <span>Admin</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B7280] bg-[#F3F4F6] border border-[#E5E7EB] px-2 py-0.5 rounded-[5px]">
-                Anggota
-              </span>
-            )}
-
-            <ChevronDown 
-              className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
-                isProfileExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
-              }`} 
-            />
-          </div>
+          )}
         </div>
 
-        {/* Content Body */}
-        {isProfileExpanded && (
-          <div className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/40">
-            {/* Set Profil Tim */}
-            <form onSubmit={handleSaveProfile} className="space-y-1.5">
-              <label className="block text-[12px] font-medium text-[#0B0C0E]">
-                Nama Anda (Personalisasi Profil)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  list="settings-member-suggestions"
-                  placeholder="Pilih atau ketik nama Anda..."
-                  value={customName}
-                  onChange={e => setCustomName(e.target.value)}
-                  className="flex-1 h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
-                />
-                <datalist id="settings-member-suggestions">
-                  {anggota.map(a => (
-                    <option key={a.id} value={a.nama} />
-                  ))}
-                </datalist>
-                <button
-                  type="submit"
-                  className="h-9 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] text-white text-[12px] font-semibold rounded-[6px] transition-colors shadow-2xs shrink-0"
-                >
-                  Simpan
-                </button>
+        {/* ── 2. PROFIL TIM & AKSES ADMIN ── */}
+        <div>
+          {/* Accordion Row Trigger */}
+          <div
+            onClick={() => setIsProfileExpanded(!isProfileExpanded)}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-[7px] bg-[#EEF6FF] text-[#2E7DD1] flex items-center justify-center shrink-0 border border-[#C8E0FB] shadow-2xs">
+                <User className="w-4 h-4" />
               </div>
-            </form>
+              <div className="min-w-0">
+                <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
+                  Status & Personalisasi Profil
+                </h3>
+                <p className="text-[11px] text-[#6B7280] truncate">
+                  {isAdmin ? 'Hak Akses Admin Aktif' : 'Mode Anggota Tim / Penonton'}
+                </p>
+              </div>
+            </div>
 
-            {/* Login Admin (Hanya tampil jika belum login) */}
-            {!isAdmin && (
-              <form onSubmit={handleAdminLogin} className="pt-3 border-t border-[#E5E7EB] space-y-1.5">
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              {isAdmin ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DB6E0F] bg-[#FFF5EA] border border-[#FBD6B0] px-2 py-0.5 rounded-[5px]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#F6821F]" />
+                  <span>Admin</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B7280] bg-[#F3F4F6] border border-[#E5E7EB] px-2 py-0.5 rounded-[5px]">
+                  Anggota
+                </span>
+              )}
+
+              <ChevronDown 
+                className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
+                  isProfileExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
+                }`} 
+              />
+            </div>
+          </div>
+
+          {/* Content Body */}
+          {isProfileExpanded && (
+            <div className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/50">
+              {/* Set Profil Tim */}
+              <form onSubmit={handleSaveProfile} className="space-y-1.5">
                 <label className="block text-[12px] font-medium text-[#0B0C0E]">
-                  Masuk sebagai Admin
+                  Nama Anda (Personalisasi Profil)
                 </label>
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
+                  <input
+                    type="text"
+                    list="settings-member-suggestions"
+                    placeholder="Pilih atau ketik nama Anda..."
+                    value={customName}
+                    onChange={e => setCustomName(e.target.value)}
+                    className="flex-1 h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                  />
+                  <datalist id="settings-member-suggestions">
+                    {anggota.map(a => (
+                      <option key={a.id} value={a.nama} />
+                    ))}
+                  </datalist>
+                  <button
+                    type="submit"
+                    className="h-9 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] text-white text-[12px] font-semibold rounded-[6px] transition-colors shadow-2xs shrink-0"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+
+              {/* Login Admin (Hanya tampil jika belum login) */}
+              {!isAdmin && (
+                <form onSubmit={handleAdminLogin} className="pt-3 border-t border-[#E5E7EB] space-y-1.5">
+                  <label className="block text-[12px] font-medium text-[#0B0C0E]">
+                    Masuk sebagai Admin
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type={showAdminPass ? 'text' : 'password'}
+                        placeholder="Masukkan password admin..."
+                        value={adminPasswordInput}
+                        onChange={e => setAdminPasswordInput(e.target.value)}
+                        className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAdminPass(!showAdminPass)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
+                      >
+                        {showAdminPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={loginLoading}
+                      className="h-9 px-4 bg-[#0B0C0E] hover:bg-[#27272A] text-white text-[12px] font-semibold rounded-[6px] transition-colors disabled:opacity-50 shrink-0"
+                    >
+                      {loginLoading ? 'Memverifikasi...' : 'Login Admin'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── 3. KONFIGURASI WHATSAPP & PASSWORD (ADMIN ONLY) ── */}
+        {isAdmin && (
+          <div>
+            {/* Accordion Row Trigger */}
+            <div
+              onClick={() => setIsConfigExpanded(!isConfigExpanded)}
+              className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-[7px] bg-[#EBF9F1] text-[#0F9D58] flex items-center justify-center shrink-0 border border-[#B7EBD0] shadow-2xs">
+                  <Key className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
+                    Konfigurasi WhatsApp & Password Admin
+                  </h3>
+                  <p className="text-[11px] text-[#6B7280] truncate">
+                    Ubah tautan grup WA dan perbarui kata sandi admin
+                  </p>
+                </div>
+              </div>
+
+              <div className="shrink-0 ml-2">
+                <ChevronDown 
+                  className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
+                    isConfigExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
+                  }`} 
+                />
+              </div>
+            </div>
+
+            {/* Form Body */}
+            {isConfigExpanded && (
+              <form onSubmit={handleSaveAppConfig} className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/50">
+                {/* Link Grup WA */}
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#0B0C0E] flex items-center gap-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-[#0F9D58]" />
+                    <span>Link Grup WhatsApp Bakid Multimedia</span>
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://chat.whatsapp.com/..."
+                    value={waLink}
+                    onChange={e => setWaLink(e.target.value)}
+                    className="w-full h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[12px] font-mono text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                  />
+                </div>
+
+                {/* Ganti Password */}
+                <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
+                  <label className="block text-[12px] font-medium text-[#0B0C0E]">
+                    Ganti Password Admin (Opsional)
+                  </label>
+                  <div className="relative">
                     <input
-                      type={showAdminPass ? 'text' : 'password'}
-                      placeholder="Masukkan password admin..."
-                      value={adminPasswordInput}
-                      onChange={e => setAdminPasswordInput(e.target.value)}
-                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                      type={showNewPassword ? 'text' : 'password'}
+                      placeholder="Password baru (kosongkan jika tidak diubah)"
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                     />
                     <button
                       type="button"
-                      onClick={() => setShowAdminPass(!showAdminPass)}
+                      onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
                     >
-                      {showAdminPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
+
+                  {newPassword && (
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Konfirmasi password baru"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2 flex justify-end">
                   <button
                     type="submit"
-                    disabled={loginLoading}
-                    className="h-9 px-4 bg-[#0B0C0E] hover:bg-[#27272A] text-white text-[12px] font-semibold rounded-[6px] transition-colors disabled:opacity-50 shrink-0"
+                    disabled={submitting}
+                    className="h-8.5 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-semibold rounded-[6px] flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
                   >
-                    {loginLoading ? 'Memverifikasi...' : 'Login Admin'}
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{submitting ? 'Menyimpan...' : 'Simpan Konfigurasi'}</span>
                   </button>
                 </div>
               </form>
             )}
           </div>
         )}
-      </div>
 
-      {/* ── 3. KONFIGURASI WHATSAPP & PASSWORD (ADMIN ONLY) ── */}
-      {isAdmin && (
-        <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden transition-all">
-          {/* Accordion Trigger Header */}
-          <div
-            onClick={() => setIsConfigExpanded(!isConfigExpanded)}
-            className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-[7px] bg-[#EBF9F1] text-[#0F9D58] flex items-center justify-center shrink-0 border border-[#B7EBD0] shadow-2xs">
-                <Key className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
-                  Konfigurasi WhatsApp & Password Admin
-                </h3>
-                <p className="text-[11px] text-[#6B7280] truncate">
-                  Ubah tautan grup WA dan perbarui kata sandi admin
-                </p>
-              </div>
+        {/* ── 4. STATUS KONEKSI BACKEND & SINKRONISASI ── */}
+        <div className="p-3.5 sm:p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-[13px] font-semibold text-[#0B0C0E]">
+              {isConnected ? (
+                <CheckCircle2 className="w-4 h-4 text-[#0F9D58]" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-[#F6821F]" />
+              )}
+              <span>Status Koneksi Cloud Backend</span>
             </div>
-
-            <div className="shrink-0 ml-2">
-              <ChevronDown 
-                className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
-                  isConfigExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
-                }`} 
-              />
-            </div>
+            <button
+              type="button"
+              onClick={() => loadData(true)}
+              className="h-7 px-2.5 bg-[#F6F6F7] hover:bg-[#E5E7EB] text-[#0B0C0E] rounded-[5px] border border-[#E5E7EB] text-[11px] font-medium flex items-center gap-1 transition-colors shadow-2xs"
+            >
+              <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin text-[#F6821F]' : ''}`} />
+              <span>Sync Data</span>
+            </button>
           </div>
-
-          {/* Form Body */}
-          {isConfigExpanded && (
-            <form onSubmit={handleSaveAppConfig} className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/40">
-              {/* Link Grup WA */}
-              <div className="space-y-1">
-                <label className="block text-[12px] font-medium text-[#0B0C0E] flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-[#0F9D58]" />
-                  <span>Link Grup WhatsApp Bakid Multimedia</span>
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://chat.whatsapp.com/..."
-                  value={waLink}
-                  onChange={e => setWaLink(e.target.value)}
-                  className="w-full h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[12px] font-mono text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
-                />
-              </div>
-
-              {/* Ganti Password */}
-              <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
-                <label className="block text-[12px] font-medium text-[#0B0C0E]">
-                  Ganti Password Admin (Opsional)
-                </label>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    placeholder="Password baru (kosongkan jika tidak diubah)"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
-                  >
-                    {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-
-                {newPassword && (
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Konfirmasi password baru"
-                      value={confirmPassword}
-                      onChange={e => setConfirmPassword(e.target.value)}
-                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="h-8.5 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-semibold rounded-[6px] flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{submitting ? 'Menyimpan...' : 'Simpan Konfigurasi'}</span>
-                </button>
-              </div>
-            </form>
-          )}
+          <p className="text-[11.5px] text-[#6B7280]">
+            {isConnected
+              ? 'Terhubung aman dengan Google Apps Script & Google Sheets melalui Cloudflare Edge Proxy.'
+              : 'Mode Demo / Offline (Local Storage).'}
+          </p>
         </div>
-      )}
-
-      {/* ── 4. STATUS KONEKSI BACKEND & SINKRONISASI ── */}
-      <div className="bg-white rounded-[10px] border border-[#E5E7EB] p-4 shadow-cf-card space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0B0C0E]">
-            {isConnected ? (
-              <CheckCircle2 className="w-4 h-4 text-[#0F9D58]" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-[#F6821F]" />
-            )}
-            <span>Status Koneksi Cloud Backend</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => loadData(true)}
-            className="h-7 px-2.5 bg-[#F6F6F7] hover:bg-[#E5E7EB] text-[#0B0C0E] rounded-[5px] border border-[#E5E7EB] text-[11px] font-medium flex items-center gap-1 transition-colors shadow-2xs"
-          >
-            <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin text-[#F6821F]' : ''}`} />
-            <span>Sync Data</span>
-          </button>
-        </div>
-        <p className="text-[11.5px] text-[#6B7280]">
-          {isConnected
-            ? 'Terhubung aman dengan Google Apps Script & Google Sheets melalui Cloudflare Edge Proxy.'
-            : 'Mode Demo / Offline (Local Storage).'}
-        </p>
       </div>
 
       {/* ── 5. TOMBOL LOGOUT ADMIN (STANDALONE DI PALING BAWAH) ── */}
