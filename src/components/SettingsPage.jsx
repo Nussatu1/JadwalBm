@@ -120,12 +120,8 @@ export default function SettingsPage() {
     const res = await broadcastTestNotificationToAll();
     setBroadcastLoading(false);
     if (res.success) {
+      // Toast saja sebagai konfirmasi — push dari server sudah akan datang sendiri ke HP admin
       showToast(res.message || 'Sinyal tes disiarkan ke seluruh anggota!', 'success');
-      // Also show locally
-      showSystemNotification(
-        '📢 Tes Siaran: Jadwal Bakid Multimedia',
-        'Sinyal tes notifikasi serentak disiarkan ke seluruh perangkat terdaftar.'
-      );
     } else {
       showToast(res.message || 'Gagal menyiarkan tes notifikasi', 'error');
     }
