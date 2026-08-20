@@ -89,7 +89,7 @@ export default function EventFormPage({ initialData = null, onCancel, onSuccess 
         status: 'Terjadwal',
         link_dokumentasi: ''
       });
-      setSelectedMembers([]);
+      setMemberAssignments([]);
       setMediaTags([]);
     }
     setErrorMessage('');
