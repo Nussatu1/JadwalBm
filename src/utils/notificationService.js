@@ -1,6 +1,6 @@
 /**
  * Web Push & Background Notification Service for Jadwal Bakid Multimedia
- * Handles permission, custom audio (/notif.mp3), scheduled checks for H-1, Event Start, and Event End.
+ * Handles permission, custom audio (/notif.mp3), and background checks.
  */
 
 import { parseAnyDate, cleanTimeString, getTodayString } from './dateUtils';
@@ -12,29 +12,68 @@ const STORAGE_KEYS = {
 
 export const DEFAULT_NOTIF_SETTINGS = {
   enabled: false,
-  customAudio: true, // Use /notif.mp3 instead of device default sound
+  customAudio: true,
   notifyHMinus1: true,
   notifyEventStart: true,
   notifyEventEnd: true
 };
 
-let audioInstance = null;
+let sharedAudio = null;
+let isAudioUnlocked = false;
+
+/**
+ * Prime & unlock Audio on the first user interaction (touch/click)
+ * Required by Mobile Safari & Chrome autoplay security policies.
+ */
+export function initAudioUnlock() {
+  if (typeof window === 'undefined') return;
+
+  const unlock = () => {
+    try {
+      if (!sharedAudio) {
+        sharedAudio = new Audio('/notif.mp3');
+        sharedAudio.volume = 1.0;
+        sharedAudio.preload = 'auto';
+      }
+      // Play and immediately pause to unlock browser audio pipeline
+      sharedAudio.play().then(() => {
+        sharedAudio.pause();
+        sharedAudio.currentTime = 0;
+        isAudioUnlocked = true;
+      }).catch(() => {
+        // Will unlock on next interaction
+      });
+    } catch (e) {}
+
+    window.removeEventListener('click', unlock);
+    window.removeEventListener('touchstart', unlock);
+  };
+
+  window.addEventListener('click', unlock, { once: true });
+  window.addEventListener('touchstart', unlock, { once: true });
+}
+
+// Auto-register audio unlock on module load
+if (typeof window !== 'undefined') {
+  initAudioUnlock();
+}
 
 export function playCustomAudioNotification() {
   try {
-    if (!audioInstance) {
-      audioInstance = new Audio('/notif.mp3');
+    if (!sharedAudio) {
+      sharedAudio = new Audio('/notif.mp3');
+      sharedAudio.volume = 1.0;
     }
-    audioInstance.currentTime = 0;
-    const playPromise = audioInstance.play();
+    sharedAudio.currentTime = 0;
+    const playPromise = sharedAudio.play();
     if (playPromise !== undefined) {
       playPromise.catch((e) => {
-        console.warn('Audio auto-play policy prevented sound playback:', e);
+        console.warn('Audio play prevented by browser autoplay policy:', e);
       });
     }
     return true;
   } catch (e) {
-    console.error('Failed to play custom notification audio:', e);
+    console.error('Failed to play notification audio:', e);
     return false;
   }
 }
@@ -80,10 +119,8 @@ export async function requestNotificationPermission() {
 export async function showSystemNotification(title, body, options = {}) {
   const settings = getNotificationSettings();
 
-  // Play custom MP3 audio if enabled
-  if (settings.customAudio !== false) {
-    playCustomAudioNotification();
-  }
+  // Play audio
+  playCustomAudioNotification();
 
   if (!('Notification' in window) || Notification.permission !== 'granted') {
     return false;
@@ -93,22 +130,22 @@ export async function showSystemNotification(title, body, options = {}) {
     body,
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png',
-    vibrate: [200, 100, 200],
-    silent: settings.customAudio !== false, // Silence OS generic beep when custom MP3 is active
+    vibrate: [300, 100, 300, 100, 300], // Strong vibration pattern
+    silent: false, // Ensure device rings / vibrates
     tag: options.tag || 'bakid-notif-' + Date.now(),
     renotify: true,
     data: options.data || {},
     ...options
   };
 
-  // Try Service Worker showNotification first (Works better on Mobile PWA)
+  // Try Service Worker showNotification first (Works best on Android PWA)
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     try {
       const registration = await navigator.serviceWorker.ready;
       await registration.showNotification(title, notifOptions);
       return true;
     } catch (e) {
-      // Fallback to standard Notification
+      // Fallback
     }
   }
 
@@ -185,7 +222,6 @@ export function checkAndTriggerEventNotifications(events) {
       const startDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sHour, sMin, 0);
       const diffMinutes = Math.round((now - startDateTime) / (60 * 1000));
 
-      // Jika sekarang sudah jam mulai (antara 0 sampai 15 menit setelah jam mulai)
       if (diffMinutes >= 0 && diffMinutes <= 15) {
         const keyStart = `start_${event.id}_${todayStr}`;
         if (!sentLog[keyStart]) {
