@@ -27,7 +27,8 @@ import {
   saveNotificationSettings, 
   requestNotificationPermission, 
   showSystemNotification,
-  playCustomAudioNotification
+  playCustomAudioNotification,
+  subscribeUserToPush
 } from '../utils/notificationService';
 
 export default function SettingsPage() {
@@ -71,6 +72,10 @@ export default function SettingsPage() {
         const updated = { ...notifSettings, enabled: true };
         setNotifSettings(updated);
         saveNotificationSettings(updated);
+        
+        // Register VAPID Web Push Subscription on Cloudflare Server
+        subscribeUserToPush();
+
         showToast('Notifikasi push HP berhasil diaktifkan!', 'success');
         showSystemNotification(
           '🔔 Notifikasi Jadwal BM Aktif',

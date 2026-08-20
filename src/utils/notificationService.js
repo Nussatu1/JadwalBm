@@ -18,6 +18,48 @@ export const DEFAULT_NOTIF_SETTINGS = {
   notifyEventEnd: true
 };
 
+export const VAPID_PUBLIC_KEY = 'BLjGf9tE-tULNS-2Do6COan2IrUi2YNDMnjB4AkrSyK7Mw8I2b7nW0UKwC91LvNQh5BI5_JKviMZ3pQUysDsOSg';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+export async function subscribeUserToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return { success: false, message: 'Push Manager not supported' };
+  }
+  try {
+    let reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      reg = await navigator.serviceWorker.register('/sw.js');
+    }
+    const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: convertedKey
+    });
+
+    // Send subscription to Cloudflare Pages Push API
+    await fetch('/api/push?action=subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(subscription)
+    });
+
+    return { success: true, subscription };
+  } catch (e) {
+    console.warn('subscribeUserToPush error:', e);
+    return { success: false, message: e.message };
+  }
+}
+
 let sharedAudio = null;
 let isAudioUnlocked = false;
 

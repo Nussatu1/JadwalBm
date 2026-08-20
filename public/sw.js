@@ -82,3 +82,34 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+// Server Web Push Event (Wakes up device & displays notification even if app is closed)
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'Jadwal Bakid Multimedia',
+    body: 'Ada pembaruan jadwal liputan acara.'
+  };
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  const notifOptions = {
+    body: data.body || 'Pembaruan jadwal liputan tim multimedia.',
+    icon: '/icon-192x192.png',
+    badge: '/icon-192x192.png',
+    vibrate: [300, 100, 300, 100, 300],
+    tag: data.tag || 'bm-push-' + Date.now(),
+    renotify: true,
+    data: data.data || { url: '/' }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Jadwal Bakid Multimedia', notifOptions)
+  );
+});
+
+

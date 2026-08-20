@@ -160,10 +160,14 @@ function doPost(e) {
         result = verifyAdminAuth(payload.authToken, () => handleUpdateConfig(payload.data));
         break;
 
+      case 'savePushSubscription':
+        result = handleSavePushSubscription(payload.subscription, payload.userAgent);
+        break;
+
       default:
         result = {
           success: false,
-          message: 'Aksi (action) tidak dikenali: ' + action,
+          message: 'Aksi POST tidak valid: ' + action,
           data: null
         };
     }
@@ -678,3 +682,40 @@ function handleUpdateConfig(data) {
     data: null
   };
 }
+
+/**
+ * -------------------------------------------------------------
+ * PUSH NOTIFICATION SUBSCRIBERS HANDLER
+ * -------------------------------------------------------------
+ */
+function handleSavePushSubscription(subscription, userAgent) {
+  if (!subscription || !subscription.endpoint) {
+    return { success: false, message: 'Data Push Subscription tidak valid.' };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('PushSubscribers');
+  if (!sheet) {
+    sheet = ss.insertSheet('PushSubscribers');
+    sheet.appendRow(['Endpoint', 'AuthKey', 'P256dhKey', 'UserAgent', 'SubscribedAt', 'Status']);
+    sheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#FFF5EA');
+  }
+
+  const endpoint = subscription.endpoint;
+  const authKey = subscription.keys ? subscription.keys.auth : '';
+  const p256dhKey = subscription.keys ? subscription.keys.p256dh : '';
+
+  // Check if endpoint is already registered
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0] === endpoint) {
+      sheet.getRange(i + 1, 5).setValue(new Date().toISOString());
+      sheet.getRange(i + 1, 6).setValue('Active');
+      return { success: true, message: 'Push subscription berhasil diperbarui di database.' };
+    }
+  }
+
+  sheet.appendRow([endpoint, authKey, p256dhKey, userAgent || '', new Date().toISOString(), 'Active']);
+  return { success: true, message: 'Push subscription baru berhasil didaftarkan di database.' };
+}
+
