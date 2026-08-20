@@ -9,7 +9,7 @@ import {
   ChevronRight as ChevronRightIcon,
   Sparkles
 } from 'lucide-react';
-import { NAMA_BULAN, formatTanggalIndo, cleanTimeString, parseAnyDate } from '../utils/dateUtils';
+import { NAMA_BULAN, formatTanggalIndo, cleanTimeString, parseAnyDate, formatJam } from '../utils/dateUtils';
 import { useEvents } from '../context/EventContext';
 import StatusBadge from './StatusBadge';
 
@@ -388,7 +388,7 @@ export default function CalendarView({ onSelectEvent }) {
                     <div className="flex items-center gap-3 text-[12px] text-[#6B7280] flex-wrap">
                       <div className="flex items-center gap-1 shrink-0 text-[#374151] font-medium">
                         <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                        <span>{startTime ? `${startTime}${endTime ? ' - ' + endTime : ''} WIB` : 'Waktu menyusul'}</span>
+                        <span>{formatJam(event.jam_mulai, event.jam_selesai)}</span>
                       </div>
 
                       {event.lokasi_nama && (

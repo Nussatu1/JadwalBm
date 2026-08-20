@@ -285,6 +285,7 @@ export default function EventFormPage({ initialData = null, onCancel, onSuccess 
           <div>
             <TimePicker
               label="Jam Selesai"
+              allowSelesai
               value={formData.jam_selesai}
               onChange={e => setFormData({ ...formData, jam_selesai: e.target.value })}
             />

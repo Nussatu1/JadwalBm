@@ -7,36 +7,45 @@ const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
 
 /**
- * Custom Time Picker Component
+ * Custom Time Picker Component with optional "Selesai" choice
  * Replaces native <input type="time">
  */
 export default function TimePicker({
   label,
-  value, // HH:mm
+  value, // HH:mm or 'Selesai'
   onChange,
   className = '',
-  required = false
+  required = false,
+  allowSelesai = false
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  const isSelesai = value === 'Selesai' || value?.toLowerCase?.() === 'selesai';
+
   const [currentHour, setCurrentHour] = useState(() => {
-    return value ? value.split(':')[0] || '08' : '08';
+    if (value && !isSelesai) {
+      return value.split(':')[0] || '08';
+    }
+    return '08';
   });
 
   const [currentMinute, setCurrentMinute] = useState(() => {
-    return value ? value.split(':')[1] || '00' : '00';
+    if (value && !isSelesai) {
+      return value.split(':')[1] || '00';
+    }
+    return '00';
   });
 
   useEffect(() => {
-    if (value) {
+    if (value && !isSelesai) {
       const parts = value.split(':');
       if (parts.length >= 2) {
         setCurrentHour(parts[0]);
         setCurrentMinute(parts[1]);
       }
     }
-  }, [value]);
+  }, [value, isSelesai]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -75,6 +84,11 @@ export default function TimePicker({
     setIsOpen(false);
   };
 
+  const handleSelectSelesai = () => {
+    onChange({ target: { value: 'Selesai' } });
+    setIsOpen(false);
+  };
+
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       {label && (
@@ -92,7 +106,15 @@ export default function TimePicker({
         }`}
       >
         <span className={`truncate ${value ? 'text-[#0B0C0E] font-medium' : 'text-[#9CA3AF]'}`}>
-          {value ? `${value} WIB` : 'Pilih jam...'}
+          {isSelesai ? (
+            <span className="inline-flex items-center gap-1 text-[#0F9D58] font-bold">
+              <Check className="w-3.5 h-3.5" /> Selesai
+            </span>
+          ) : value ? (
+            `${value} WIB`
+          ) : (
+            'Pilih jam...'
+          )}
         </span>
         <Clock className={`w-4 h-4 text-[#9CA3AF] shrink-0 ${isOpen ? 'text-[#F6821F]' : ''}`} />
       </button>
@@ -104,6 +126,19 @@ export default function TimePicker({
           <div className="mb-2.5">
             <p className="text-[10px] uppercase tracking-wider font-semibold text-[#6B7280] mb-1">Pilihan Cepat</p>
             <div className="flex flex-wrap gap-1">
+              {allowSelesai && (
+                <button
+                  type="button"
+                  onClick={handleSelectSelesai}
+                  className={`text-[11px] px-2 py-0.5 rounded-[4px] border transition-colors ${
+                    isSelesai
+                      ? 'bg-[#EBF9F1] border-[#B7EBD0] text-[#0F9D58] font-bold'
+                      : 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-semibold hover:bg-[#FFE8CC]'
+                  }`}
+                >
+                  ✨ Selesai
+                </button>
+              )}
               {COMMON_PRESETS.map(p => (
                 <button
                   type="button"
@@ -133,7 +168,7 @@ export default function TimePicker({
                     key={h}
                     onClick={() => handleHourSelect(h)}
                     className={`w-full text-[12px] py-1 rounded-[2px] transition-colors text-center ${
-                      currentHour === h
+                      currentHour === h && !isSelesai
                         ? 'bg-[#F6821F] text-white font-semibold'
                         : 'hover:bg-[#F6F6F7] text-[#0B0C0E]'
                     }`}
@@ -154,7 +189,7 @@ export default function TimePicker({
                     key={m}
                     onClick={() => handleMinuteSelect(m)}
                     className={`w-full text-[12px] py-1 rounded-[2px] transition-colors text-center ${
-                      currentMinute === m
+                      currentMinute === m && !isSelesai
                         ? 'bg-[#F6821F] text-white font-semibold'
                         : 'hover:bg-[#F6F6F7] text-[#0B0C0E]'
                     }`}
@@ -167,13 +202,22 @@ export default function TimePicker({
           </div>
 
           {/* Done Button */}
-          <div className="mt-2.5 pt-2 border-t border-[#E5E7EB] flex justify-end">
+          <div className="mt-2.5 pt-2 border-t border-[#E5E7EB] flex justify-end gap-1.5">
+            {allowSelesai && (
+              <button
+                type="button"
+                onClick={handleSelectSelesai}
+                className="h-7 px-2.5 bg-[#EBF9F1] hover:bg-[#D4F4E2] text-[#0F9D58] text-[11px] font-semibold rounded-[4px] border border-[#B7EBD0] transition-colors mr-auto"
+              >
+                Pilih Selesai
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setIsOpen(false)}
               className="h-7 px-3 bg-[#F6821F] hover:bg-[#DB6E0F] text-white text-[11px] font-medium rounded-[4px] transition-colors"
             >
-              Selesai
+              Tutup
             </button>
           </div>
         </div>

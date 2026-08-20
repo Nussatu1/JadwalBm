@@ -260,6 +260,7 @@ export default function EventFormModal({ isOpen, onClose, initialData = null }) 
           <div>
             <TimePicker
               label="Jam Selesai"
+              allowSelesai
               value={formData.jam_selesai}
               onChange={e => setFormData({ ...formData, jam_selesai: e.target.value })}
             />

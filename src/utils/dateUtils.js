@@ -42,6 +42,10 @@ export function cleanTimeString(timeVal) {
   const str = String(timeVal).trim();
   if (!str) return '';
 
+  if (str.toLowerCase() === 'selesai' || str.toLowerCase().includes('selesai')) {
+    return 'Selesai';
+  }
+
   // 1. Ekstrak pola jam:menit HH:MM dari string apapun
   const match = str.match(/(?:^|\s|T)(\d{1,2}):(\d{2})(?::\d{2})?/);
   if (match) {
@@ -91,14 +95,17 @@ export function formatTanggalRingkas(dateStr) {
 }
 
 /**
- * Format rentang jam, misal: "09:00 - 12:00 WIB"
+ * Format rentang jam, misal: "13:00 - Selesai" atau "09:00 - 12:00 WIB"
  */
 export function formatJam(jamMulai, jamSelesai) {
   const start = cleanTimeString(jamMulai);
   const end = cleanTimeString(jamSelesai);
 
+  const isEndSelesai = end === 'Selesai' || end.toLowerCase().includes('selesai');
+
   if (!start && !end) return 'Waktu belum ditentukan';
-  if (start && !end) return `${start} WIB - Selesai`;
+  if (start && (isEndSelesai || !end)) return `${start} - Selesai`;
+  if (!start && isEndSelesai) return 'Sampai Selesai';
   if (!start && end) return `Sampai ${end} WIB`;
   return `${start} - ${end} WIB`;
 }
