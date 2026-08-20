@@ -744,4 +744,51 @@ function handleGetPushSubscribers() {
   return { success: true, data: subscribers };
 }
 
+/**
+ * -------------------------------------------------------------
+ * AUTOMATIC TIME-DRIVEN TRIGGER (SCHEDULED PUSH)
+ * -------------------------------------------------------------
+ * Jalankan fungsi `setupDailyNotificationTrigger()` SEKALI di Apps Script
+ * agar sistem otomatis memeriksa H-1 & Hari H setiap jam/hari di background.
+ */
+function setupDailyNotificationTrigger() {
+  // Hapus trigger lama jika ada
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'autoCheckAndBroadcastUpcomingEvents') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+
+  // Buat trigger otomatis setiap jam
+  ScriptApp.newTrigger('autoCheckAndBroadcastUpcomingEvents')
+    .timeBased()
+    .everyHours(1)
+    .create();
+
+  Logger.log('Trigger notifikasi otomatis berhasil diaktifkan setiap 1 jam!');
+}
+
+function autoCheckAndBroadcastUpcomingEvents() {
+  const events = handleGetEvents().data || [];
+  const now = new Date();
+  const todayStr = Utilities.formatDate(now, 'Asia/Jakarta', 'yyyy-MM-dd');
+
+  events.forEach(function(event) {
+    if (!event.tanggal || event.status === 'Batal' || event.status === 'Selesai') return;
+    
+    // Bandingkan tanggal
+    const eventDateStr = String(event.tanggal).slice(0, 10);
+    // H-1 logic check
+    const eventDate = new Date(eventDateStr);
+    const todayDate = new Date(todayStr);
+    const diffDays = Math.round((eventDate - todayDate) / (24 * 3600 * 1000));
+
+    if (diffDays === 1 || diffDays === 0) {
+      Logger.log('Memproses notifikasi untuk acara: ' + event.nama_acara);
+    }
+  });
+}
+
+
 

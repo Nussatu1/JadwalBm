@@ -21,7 +21,7 @@ import Toast from './components/Toast';
 import SplashScreen from './components/SplashScreen';
 import InstallPrompt from './components/InstallPrompt';
 import InAppNotificationBanner from './components/InAppNotificationBanner';
-import { checkAndTriggerEventNotifications } from './utils/notificationService';
+import { checkAndTriggerEventNotifications, subscribeUserToPush } from './utils/notificationService';
 
 export default function App() {
   const { isAdmin } = useAuth();
@@ -43,6 +43,13 @@ export default function App() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // Auto-register Push Subscription if permission is already granted
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      subscribeUserToPush();
+    }
+  }, []);
 
   // Background Push Notification Periodic Checker (Every 60s)
   useEffect(() => {
