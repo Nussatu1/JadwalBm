@@ -43,8 +43,8 @@ export default function App() {
     setHideCompleted
   } = useEvents();
 
-  // Active view tab: 'list' | 'calendar' | 'tambah' | 'anggota' | 'pengaturan'
-  const [activeTab, setActiveTab] = useState('list');
+  // Active view tab: 'calendar' | 'list' | 'tambah' | 'anggota' | 'pengaturan'
+  const [activeTab, setActiveTab] = useState('calendar');
 
   // Modals & Navigation state
   const [editingEvent, setEditingEvent] = useState(null);
