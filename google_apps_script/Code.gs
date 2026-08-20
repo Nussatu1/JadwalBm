@@ -134,11 +134,17 @@ function doGet(e) {
  * Handle HTTP POST Requests
  */
 function doPost(e) {
+  const lock = LockService.getScriptLock();
   try {
+    // Tunggu hingga 10 detik jika ada request concurrent lain
+    lock.waitLock(10000);
+
     let payload = {};
-    if (e && e.postData && e.postData.contents) {
+    const postData = e && e.postData ? e.postData.contents : '';
+
+    if (postData) {
       try {
-        payload = JSON.parse(e.postData.contents);
+        payload = JSON.parse(postData);
       } catch (err) {
         payload = e.parameter || {};
       }
@@ -211,6 +217,10 @@ function doPost(e) {
       message: 'Terjadi kesalahan pada server (POST): ' + error.toString(),
       data: null
     });
+  } finally {
+    try {
+      lock.releaseLock();
+    } catch (_) {}
   }
 }
 

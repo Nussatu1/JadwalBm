@@ -363,10 +363,12 @@ export function checkAndTriggerEventNotifications(events) {
       const isManual = event.status === 'Selesai';
       let isAuto = false;
 
-      if (diffDays === 0 && endClean) {
+      if (diffDays === 0 && endClean && endClean !== 'Selesai') {
         const [eH, eM] = endClean.split(':').map(Number);
-        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eH, eM, 0);
-        if (now >= endTime) isAuto = true;
+        if (!isNaN(eH) && !isNaN(eM)) {
+          const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eH, eM, 0);
+          if (now >= endTime) isAuto = true;
+        }
       }
 
       if (isManual || isAuto) {

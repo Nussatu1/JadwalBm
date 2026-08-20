@@ -57,7 +57,22 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
     }
   }, [event?.id]);
 
+  // Parse format "Nama:Peran" (baru) dan "Nama" (lama) — backward compatible
+  const anggotaList = event?.anggota_diutus
+    ? event.anggota_diutus.split(',').map(s => s.trim()).filter(Boolean).map(item => {
+        const idx = item.indexOf(':');
+        return idx !== -1
+          ? { nama: item.slice(0, idx).trim(), peran: item.slice(idx + 1).trim() }
+          : { nama: item.trim(), peran: '' };
+      })
+    : [];
+
+  const alatList = event?.alat_media
+    ? event.alat_media.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+
   const toggleGearCheck = (gearName) => {
+    if (!event?.id) return;
     setGearChecklist(prev => {
       const current = prev[gearName] || { bawa: false, kembali: false };
       const updated = {
@@ -75,6 +90,7 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
   };
 
   const handleCheckAll = () => {
+    if (!event?.id) return;
     setGearChecklist(prev => {
       const updated = { ...prev };
       alatList.forEach(gear => {
@@ -89,6 +105,7 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
   };
 
   const handleResetChecklist = () => {
+    if (!event?.id) return;
     setGearChecklist(prev => {
       const updated = { ...prev };
       alatList.forEach(gear => {
@@ -103,20 +120,6 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
   };
 
   if (!isOpen || !event) return null;
-
-  // Parse format "Nama:Peran" (baru) dan "Nama" (lama) — backward compatible
-  const anggotaList = event.anggota_diutus
-    ? event.anggota_diutus.split(',').map(s => s.trim()).filter(Boolean).map(item => {
-        const idx = item.indexOf(':');
-        return idx !== -1
-          ? { nama: item.slice(0, idx).trim(), peran: item.slice(idx + 1).trim() }
-          : { nama: item.trim(), peran: '' };
-      })
-    : [];
-
-  const alatList = event.alat_media
-    ? event.alat_media.split(',').map(s => s.trim()).filter(Boolean)
-    : [];
 
   const handleConfirmDelete = () => {
     deleteEvent(event.id);

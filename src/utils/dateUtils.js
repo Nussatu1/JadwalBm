@@ -147,7 +147,7 @@ export function isEventUpcomingOrLive(event, hoursWindow = 48) {
 
   const endClean = cleanTimeString(event.jam_selesai);
   let endHour = 23, endMin = 59;
-  if (endClean) {
+  if (endClean && endClean !== 'Selesai') {
     const timeParts = endClean.split(':');
     endHour = parseInt(timeParts[0], 10) || 23;
     endMin = parseInt(timeParts[1], 10) || 59;
