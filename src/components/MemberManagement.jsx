@@ -114,55 +114,59 @@ export default function MemberManagement() {
         </div>
       </div>
 
-      {/* Member List */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {/* Member List (Minimalist Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
         {filteredAnggota.map(item => (
           <div
             key={item.id}
-            className="bg-white rounded-[8px] border border-[#E5E7EB] p-3 shadow-cf-card flex items-center justify-between gap-3"
+            className="bg-white rounded-[6px] border border-[#E5E7EB] px-3 py-2 hover:border-[#D1D5DB] transition-all flex items-center justify-between gap-2.5 shadow-2xs"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-[6px] bg-[#F6F6F7] border border-[#E5E7EB] text-[#0B0C0E] font-semibold flex items-center justify-center text-[12px] shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              {/* Initials Avatar */}
+              <div className="w-7 h-7 rounded-full bg-[#F6F6F7] border border-[#E5E7EB] text-[#374151] font-semibold flex items-center justify-center text-[10.5px] shrink-0">
                 {item.nama.slice(0, 2).toUpperCase()}
               </div>
-              <div>
-                <h3 className="text-[13px] font-semibold text-[#0B0C0E] leading-tight">
-                  {item.nama}
-                </h3>
-                <p className="text-[11px] text-[#6B7280] mt-0.5">
+
+              {/* Name & Role */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-[12.5px] font-semibold text-[#0B0C0E] truncate leading-tight">
+                    {item.nama}
+                  </h3>
+                  {/* Status Indicator Dot */}
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      item.aktif !== false ? 'bg-[#0F9D58]' : 'bg-[#9CA3AF]'
+                    }`}
+                    title={item.aktif !== false ? 'Status: Aktif' : 'Status: Nonaktif'}
+                  />
+                </div>
+                <p className="text-[11px] text-[#6B7280] truncate leading-tight mt-0.5">
                   {item.peran || 'Multimedia'}
                 </p>
-                <div className="mt-1">
-                  {item.aktif ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0F9D58] bg-[#EBF9F1] border border-[#B7EBD0] px-1.5 py-0.5 rounded-full">
-                      <CheckCircle2 className="w-2.5 h-2.5" /> Aktif
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#6B7280] bg-[#F3F4F6] border border-[#E5E7EB] px-1.5 py-0.5 rounded-full">
-                      <XCircle className="w-2.5 h-2.5" /> Nonaktif
-                    </span>
-                  )}
-                </div>
               </div>
             </div>
 
+            {/* Actions (Admin Only) */}
             {isAdmin && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 shrink-0">
                 <button
+                  type="button"
                   onClick={() => handleOpenEdit(item)}
                   title="Edit Anggota"
                   aria-label="Edit Anggota"
-                  className="h-8 w-8 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-[#F6F6F7] rounded-[6px] border border-[#E5E7EB] transition-colors"
+                  className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-[#F6F6F7] rounded-[4px] transition-colors"
                 >
-                  <Edit2 className="w-3.5 h-3.5" />
+                  <Edit2 className="w-3 h-3" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => setItemToDelete(item)}
                   title="Hapus Anggota"
                   aria-label="Hapus Anggota"
-                  className="h-8 w-8 flex items-center justify-center text-[#6B7280] hover:text-[#E5484D] hover:bg-[#FDF1F2] rounded-[6px] border border-[#E5E7EB] transition-colors"
+                  className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:text-[#E5484D] hover:bg-[#FDF1F2] rounded-[4px] transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
               </div>
             )}
