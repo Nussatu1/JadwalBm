@@ -33,7 +33,7 @@ export default function InAppNotificationBanner() {
   if (!notification) return null;
 
   return (
-    <div className="fixed top-4 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-sm z-50 animate-cf-modal">
+    <div className="fixed bottom-[72px] left-3 right-3 sm:left-auto sm:right-4 sm:max-w-sm z-40 animate-cf-modal">
       <div className="bg-[#0B0C0E] text-white p-3.5 rounded-[10px] shadow-2xl border border-white/15 flex items-start gap-3">
         {/* Logo Emblem */}
         <div className="w-9 h-9 rounded-[7px] bg-[#F6821F] p-1.5 flex items-center justify-center shrink-0 shadow">

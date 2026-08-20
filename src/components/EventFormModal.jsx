@@ -34,7 +34,7 @@ export default function EventFormModal({ isOpen, onClose, initialData = null }) 
     link_dokumentasi: ''
   });
 
-  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [memberAssignments, setMemberAssignments] = useState([]);
   const [manualMemberInput, setManualMemberInput] = useState('');
   const [mediaTags, setMediaTags] = useState([]);
   const [customTagInput, setCustomTagInput] = useState('');
@@ -59,9 +59,15 @@ export default function EventFormModal({ isOpen, onClose, initialData = null }) 
       });
 
       const members = initialData.anggota_diutus
-        ? initialData.anggota_diutus.split(',').map(s => s.trim()).filter(Boolean)
+        ? initialData.anggota_diutus.split(',').map(s => s.trim()).filter(Boolean).map(item => {
+            const colonIdx = item.indexOf(':');
+            if (colonIdx !== -1) {
+              return { nama: item.slice(0, colonIdx).trim(), peranAcara: item.slice(colonIdx + 1).trim() };
+            }
+            return { nama: item.trim(), peranAcara: '' };
+          })
         : [];
-      setSelectedMembers(members);
+      setMemberAssignments(members);
 
       const gears = initialData.alat_media
         ? initialData.alat_media.split(',').map(s => s.trim()).filter(Boolean)
@@ -82,7 +88,7 @@ export default function EventFormModal({ isOpen, onClose, initialData = null }) 
         status: 'Terjadwal',
         link_dokumentasi: ''
       });
-      setSelectedMembers([]);
+      setMemberAssignments([]);
       setMediaTags([]);
     }
     setErrorMessage('');
@@ -90,23 +96,31 @@ export default function EventFormModal({ isOpen, onClose, initialData = null }) 
 
   if (!isOpen) return null;
 
-  const toggleMasterMember = (name) => {
-    if (selectedMembers.includes(name)) {
-      setSelectedMembers(selectedMembers.filter(m => m !== name));
+  const toggleMasterMember = (anggota) => {
+    const exists = memberAssignments.find(m => m.nama === anggota.nama);
+    if (exists) {
+      setMemberAssignments(memberAssignments.filter(m => m.nama !== anggota.nama));
     } else {
-      setSelectedMembers([...selectedMembers, name]);
+      setMemberAssignments([...memberAssignments, { nama: anggota.nama, peranAcara: anggota.peran || '' }]);
     }
   };
 
   const addManualMember = () => {
-    if (manualMemberInput.trim() && !selectedMembers.includes(manualMemberInput.trim())) {
-      setSelectedMembers([...selectedMembers, manualMemberInput.trim()]);
+    const trimmed = manualMemberInput.trim();
+    if (trimmed && !memberAssignments.find(m => m.nama === trimmed)) {
+      setMemberAssignments([...memberAssignments, { nama: trimmed, peranAcara: '' }]);
       setManualMemberInput('');
     }
   };
 
-  const removeMember = (name) => {
-    setSelectedMembers(selectedMembers.filter(m => m !== name));
+  const removeMember = (nama) => {
+    setMemberAssignments(memberAssignments.filter(m => m.nama !== nama));
+  };
+
+  const updateMemberRole = (nama, peranAcara) => {
+    setMemberAssignments(memberAssignments.map(m =>
+      m.nama === nama ? { ...m, peranAcara } : m
+    ));
   };
 
   const addMediaTag = (gear) => {
@@ -140,9 +154,13 @@ export default function EventFormModal({ isOpen, onClose, initialData = null }) 
     }
 
     setSubmitting(true);
+    const anggotaStr = memberAssignments
+      .filter(m => m.nama)
+      .map(m => m.peranAcara ? `${m.nama}:${m.peranAcara}` : m.nama)
+      .join(', ');
     const payload = {
       ...formData,
-      anggota_diutus: selectedMembers.join(', '),
+      anggota_diutus: anggotaStr,
       alat_media: mediaTags.join(', ')
     };
 
@@ -285,26 +303,29 @@ export default function EventFormModal({ isOpen, onClose, initialData = null }) 
               <span>Petugas Tim yang Diutus</span>
             </label>
             <span className="text-[11px] text-[#6B7280]">
-              {selectedMembers.length} dipilih
+              {memberAssignments.length} dipilih
             </span>
           </div>
 
           {anggota.length > 0 && (
             <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto p-1.5 bg-white rounded-[6px] border border-[#E5E7EB] mb-2">
               {anggota.map(a => {
-                const isChecked = selectedMembers.includes(a.nama);
+                const isChecked = memberAssignments.some(m => m.nama === a.nama);
                 return (
                   <button
                     type="button"
                     key={a.id}
-                    onClick={() => toggleMasterMember(a.nama)}
-                    className={`text-left text-[12px] px-2 py-1 rounded-[4px] border transition-colors flex items-center justify-between gap-1 ${
+                    onClick={() => toggleMasterMember(a)}
+                    className={`text-left text-[12px] px-2 py-1.5 rounded-[4px] border transition-colors flex items-center justify-between gap-1 ${
                       isChecked
                         ? 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-medium'
                         : 'bg-white border-[#E5E7EB] text-[#374151] hover:bg-[#F6F6F7]'
                     }`}
                   >
-                    <span className="truncate">{a.nama}</span>
+                    <div className="min-w-0">
+                      <div className="truncate">{a.nama}</div>
+                      {a.peran && <div className="text-[10px] text-[#9CA3AF] truncate">{a.peran}</div>}
+                    </div>
                     {isChecked && <Check className="w-3 h-3 text-[#F6821F] shrink-0" />}
                   </button>
                 );
@@ -312,45 +333,49 @@ export default function EventFormModal({ isOpen, onClose, initialData = null }) 
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <input
               type="text"
-              placeholder="Atau ketik nama anggota manual..."
+              placeholder="Tambah nama lain secara manual..."
               value={manualMemberInput}
               onChange={e => setManualMemberInput(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addManualMember();
-                }
+                if (e.key === 'Enter') { e.preventDefault(); addManualMember(); }
               }}
-              className="flex-1 h-8 px-2.5 bg-white border border-[#E5E7EB] rounded-[6px] text-[12px] focus:outline-none focus:border-[#F6821F]"
+              className="flex-1 min-w-0 h-8 px-2.5 bg-white border border-[#E5E7EB] rounded-[6px] text-[12px] focus:outline-none focus:border-[#F6821F]"
             />
             <button
               type="button"
               onClick={addManualMember}
-              className="h-8 px-3 bg-white border border-[#E5E7EB] hover:bg-[#F6F6F7] text-[#0B0C0E] rounded-[6px] text-[12px] font-medium transition-colors"
+              className="shrink-0 h-8 px-3 min-w-[72px] bg-white border border-[#E5E7EB] hover:bg-[#F6F6F7] text-[#0B0C0E] rounded-[6px] text-[12px] font-medium transition-colors"
             >
               + Tambah
             </button>
           </div>
 
-          {selectedMembers.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-[#E5E7EB]">
-              {selectedMembers.map(name => (
-                <span
-                  key={name}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[11px] font-medium bg-white text-[#0B0C0E] border border-[#E5E7EB]"
-                >
-                  {name}
-                  <button
-                    type="button"
-                    onClick={() => removeMember(name)}
-                    className="text-[#6B7280] hover:text-[#0B0C0E]"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+          {memberAssignments.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-[#E5E7EB] space-y-1.5">
+              {memberAssignments.map(({ nama, peranAcara }) => (
+                <div key={nama} className="flex items-center gap-1.5">
+                  <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[11px] font-medium bg-[#FFF5EA] text-[#DB6E0F] border border-[#FBD6B0]">
+                    {nama}
+                    <button
+                      type="button"
+                      onClick={() => removeMember(nama)}
+                      className="text-[#F6821F] hover:text-[#C25B08] ml-0.5"
+                      aria-label={`Hapus ${nama}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Peran di acara ini (mis. Kameramen)"
+                    value={peranAcara}
+                    onChange={e => updateMemberRole(nama, e.target.value)}
+                    className="flex-1 min-w-0 h-7 px-2 bg-white border border-[#E5E7EB] rounded-[4px] text-[11px] focus:outline-none focus:border-[#F6821F] placeholder:text-[#9CA3AF]"
+                  />
+                </div>
               ))}
             </div>
           )}
