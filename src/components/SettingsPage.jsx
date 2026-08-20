@@ -60,6 +60,7 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [isConfigExpanded, setIsConfigExpanded] = useState(false);
 
   useEffect(() => {
@@ -396,106 +397,127 @@ export default function SettingsPage() {
       </div>
 
       {/* 2. PROFIL TIM & AKSES ADMIN */}
-      <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-4 space-y-4 shadow-cf-card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-[6px] bg-[#F6F6F7] text-[#0B0C0E] flex items-center justify-center">
+      <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-cf-card overflow-hidden">
+        {/* Header Card (Klik untuk Buka/Ciutkan) */}
+        <button
+          type="button"
+          onClick={() => setIsProfileExpanded(!isProfileExpanded)}
+          className="w-full p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F6F6F7]/60 transition-colors"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-[6px] bg-[#F6F6F7] text-[#0B0C0E] flex items-center justify-center shrink-0 border border-[#E5E7EB]">
               <User className="w-4 h-4 text-[#6B7280]" />
             </div>
-            <div>
-              <h3 className="text-[14px] font-semibold text-[#0B0C0E]">
+            <div className="min-w-0">
+              <h3 className="text-[14px] font-semibold text-[#0B0C0E] truncate">
                 Status & Personalisasi
               </h3>
-              <p className="text-[11px] text-[#6B7280]">
+              <p className="text-[11px] text-[#6B7280] truncate">
                 {isAdmin ? 'Anda sedang dalam Hak Akses Admin' : 'Mode Penonton / Anggota Tim'}
               </p>
             </div>
           </div>
 
-          {isAdmin ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#DB6E0F] bg-[#FFF5EA] border border-[#FBD6B0] px-2 py-0.5 rounded-[4px]">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#F6821F]" /> Admin Aktif
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B7280] bg-[#F6F6F7] border border-[#E5E7EB] px-2 py-0.5 rounded-[4px]">
-              Anggota Tim
-            </span>
-          )}
-        </div>
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            {isAdmin ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#DB6E0F] bg-[#FFF5EA] border border-[#FBD6B0] px-2 py-0.5 rounded-[4px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#F6821F]" />
+                <span className="hidden xs:inline">Admin Aktif</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B7280] bg-[#F6F6F7] border border-[#E5E7EB] px-2 py-0.5 rounded-[4px]">
+                <span className="hidden xs:inline">Anggota Tim</span>
+              </span>
+            )}
 
-        {/* Set Profil Tim */}
-        <form onSubmit={handleSaveProfile} className="pt-2 border-t border-[#E5E7EB] space-y-2">
-          <label className="block text-[12px] font-medium text-[#0B0C0E]">
-            Nama Anda (Personalisasi Tim)
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              list="settings-member-suggestions"
-              placeholder="Pilih atau ketik nama Anda..."
-              value={customName}
-              onChange={e => setCustomName(e.target.value)}
-              className="flex-1 h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
-            />
-            <datalist id="settings-member-suggestions">
-              {anggota.map(a => (
-                <option key={a.id} value={a.nama} />
-              ))}
-            </datalist>
-            <button
-              type="submit"
-              className="h-9 px-3.5 bg-[#F6821F] hover:bg-[#DB6E0F] text-white text-[12px] font-medium rounded-[6px] transition-colors"
-            >
-              Simpan
-            </button>
+            <div className="w-7 h-7 rounded-[6px] border border-[#E5E7EB] bg-white flex items-center justify-center text-[#6B7280] shrink-0 ml-1">
+              {isProfileExpanded ? (
+                <ChevronUp className="w-4 h-4 text-[#0B0C0E]" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+              )}
+            </div>
           </div>
-        </form>
+        </button>
 
-        {/* Login Admin (Jika belum login) */}
-        {!isAdmin ? (
-          <form onSubmit={handleAdminLogin} className="pt-3 border-t border-[#E5E7EB] space-y-2">
-            <label className="block text-[12px] font-medium text-[#0B0C0E]">
-              Masuk sebagai Admin
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+        {/* Content Body (Hanya tampil saat dibuka) */}
+        {isProfileExpanded && (
+          <div className="p-4 pt-3 space-y-4 border-t border-[#E5E7EB]">
+            {/* Set Profil Tim */}
+            <form onSubmit={handleSaveProfile} className="space-y-2">
+              <label className="block text-[12px] font-medium text-[#0B0C0E]">
+                Nama Anda (Personalisasi Tim)
+              </label>
+              <div className="flex gap-2">
                 <input
-                  type={showAdminPass ? 'text' : 'password'}
-                  placeholder="Masukkan password admin..."
-                  value={adminPasswordInput}
-                  onChange={e => setAdminPasswordInput(e.target.value)}
-                  className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                  type="text"
+                  list="settings-member-suggestions"
+                  placeholder="Pilih atau ketik nama Anda..."
+                  value={customName}
+                  onChange={e => setCustomName(e.target.value)}
+                  className="flex-1 h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                 />
+                <datalist id="settings-member-suggestions">
+                  {anggota.map(a => (
+                    <option key={a.id} value={a.nama} />
+                  ))}
+                </datalist>
                 <button
-                  type="button"
-                  onClick={() => setShowAdminPass(!showAdminPass)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
+                  type="submit"
+                  className="h-9 px-3.5 bg-[#F6821F] hover:bg-[#DB6E0F] text-white text-[12px] font-medium rounded-[6px] transition-colors"
                 >
-                  {showAdminPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  Simpan
                 </button>
               </div>
-              <button
-                type="submit"
-                disabled={loginLoading}
-                className="h-9 px-4 bg-[#0B0C0E] hover:bg-[#27272A] text-white text-[12px] font-medium rounded-[6px] transition-colors disabled:opacity-50"
-              >
-                {loginLoading ? 'Memverifikasi...' : 'Login'}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between">
-            <span className="text-[12px] text-[#6B7280]">
-              Keluar dari sesi admin saat ini:
-            </span>
-            <button
-              type="button"
-              onClick={logout}
-              className="h-8 px-3 bg-white hover:bg-[#FDF1F2] text-[#E5484D] border border-[#FBD2D5] rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Keluar Admin</span>
-            </button>
+            </form>
+
+            {/* Login Admin (Jika belum login) */}
+            {!isAdmin ? (
+              <form onSubmit={handleAdminLogin} className="pt-3 border-t border-[#E5E7EB] space-y-2">
+                <label className="block text-[12px] font-medium text-[#0B0C0E]">
+                  Masuk sebagai Admin
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type={showAdminPass ? 'text' : 'password'}
+                      placeholder="Masukkan password admin..."
+                      value={adminPasswordInput}
+                      onChange={e => setAdminPasswordInput(e.target.value)}
+                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPass(!showAdminPass)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
+                    >
+                      {showAdminPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="h-9 px-4 bg-[#0B0C0E] hover:bg-[#27272A] text-white text-[12px] font-medium rounded-[6px] transition-colors disabled:opacity-50"
+                  >
+                    {loginLoading ? 'Memverifikasi...' : 'Login'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between">
+                <span className="text-[12px] text-[#6B7280]">
+                  Keluar dari sesi admin saat ini:
+                </span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="h-8 px-3 bg-white hover:bg-[#FDF1F2] text-[#E5484D] border border-[#FBD2D5] rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Keluar Admin</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
