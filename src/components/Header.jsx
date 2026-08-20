@@ -1,8 +1,5 @@
 import React from 'react';
-import { 
-  User, 
-  ShieldCheck
-} from 'lucide-react';
+import { User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header({ onOpenLogin }) {
@@ -29,24 +26,19 @@ export default function Header({ onOpenLogin }) {
           </div>
         </div>
 
-        {/* Right: Quick User Profile / Admin Badge */}
-        <div className="flex items-center gap-2">
-          {isAdmin ? (
-            <div className="h-8 px-2.5 bg-[#FFF5EA] text-[#DB6E0F] border border-[#FBD6B0] rounded-[6px] text-[12px] font-semibold flex items-center gap-1.5 shadow-2xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#F6821F]" />
-              <span>Admin</span>
-            </div>
-          ) : (
+        {/* Right: Quick User Profile (Only if not admin) */}
+        {!isAdmin && (
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onOpenLogin}
-              className="h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0B0C0E] border border-[#E5E7EB] rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors"
+              className="h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0B0C0E] border border-[#E5E7EB] rounded-[6px] text-[12px] font-medium flex items-center gap-1.5 transition-colors shadow-2xs"
             >
               <User className="w-3.5 h-3.5 text-[#6B7280]" />
               <span>{teamMemberName ? teamMemberName.split(' ')[0] : 'Masuk'}</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );

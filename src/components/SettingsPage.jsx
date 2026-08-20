@@ -666,9 +666,11 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={logout}
-            className="w-full h-10 px-4 bg-white hover:bg-[#FDF1F2] active:bg-[#FCE8EA] text-[#E5484D] hover:text-[#B9252A] border border-[#FBD2D5] rounded-[8px] text-[12.5px] font-semibold flex items-center justify-center gap-2 transition-all shadow-cf-card"
+            className="w-full h-11 px-4 bg-white hover:bg-[#FEF2F2] active:bg-[#FEE2E2] text-[#DC2626] hover:text-[#B91C1C] border border-[#FCA5A5] rounded-[10px] text-[13px] font-semibold flex items-center justify-center gap-2.5 transition-all shadow-2xs group"
           >
-            <LogOut className="w-4 h-4" />
+            <div className="w-6 h-6 rounded-full bg-[#FEE2E2] group-hover:bg-[#FECACA] flex items-center justify-center transition-colors">
+              <LogOut className="w-3.5 h-3.5 text-[#DC2626]" />
+            </div>
             <span>Keluar dari Hak Akses Admin</span>
           </button>
         </div>
