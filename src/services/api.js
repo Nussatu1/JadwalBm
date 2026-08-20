@@ -99,49 +99,87 @@ if (!localStorage.getItem('bakid_config_mock')) {
   });
 }
 
-/**
- * Eksekusi GET ke GAS Web App
- */
-async function fetchGasGet(action, params = {}) {
-  const query = new URLSearchParams({ action, ...params }).toString();
-  const url = `${GAS_API_URL}?${query}`;
-
-  const response = await fetch(url, {
-    method: 'GET',
-    mode: 'cors',
-    headers: { 'Accept': 'application/json' }
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+function getApiEndpoint() {
+  // Jika di Cloudflare Pages (*.pages.dev), prioritaskan Cloudflare Functions Proxy /api/gas
+  if (typeof window !== 'undefined' && window.location.hostname.includes('pages.dev')) {
+    return '/api/gas';
   }
-
-  return await response.json();
+  return import.meta.env.VITE_GAS_API_URL || '/api/gas';
 }
 
 /**
- * Eksekusi POST ke GAS Web App
+ * Eksekusi GET ke GAS Web App (Direct atau via Cloudflare Proxy)
+ */
+async function fetchGasGet(action, params = {}) {
+  const endpoint = getApiEndpoint();
+  const query = new URLSearchParams({ action, ...params }).toString();
+  const separator = endpoint.includes('?') ? '&' : '?';
+  const url = `${endpoint}${separator}${query}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Koneksi timeout (15 detik). Silakan muat ulang atau periksa jaringan Anda.');
+    }
+    throw err;
+  }
+}
+
+/**
+ * Eksekusi POST ke GAS Web App (Direct atau via Cloudflare Proxy)
  */
 async function fetchGasPost(action, body = {}) {
+  const endpoint = getApiEndpoint();
   const payload = { action, ...body };
 
-  // Catatan: GAS Web App memerlukan mode no-cors jika fetch biasa atau POST payload plain text / text/plain untuk bypass preflight OPTIONS
-  const response = await fetch(GAS_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!response.ok) {
-    throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Koneksi timeout (15 detik). Silakan coba lagi.');
+    }
+    throw err;
   }
-
-  return await response.json();
 }
 
 export const api = {
   isConfigured() {
-    return Boolean(GAS_API_URL && GAS_API_URL.startsWith('https://script.google.com'));
+    const endpoint = getApiEndpoint();
+    return Boolean(endpoint);
   },
 
   // ==========================================
