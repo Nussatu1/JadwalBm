@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -13,18 +13,20 @@ import EventCard from './components/EventCard';
 import CalendarView from './components/CalendarView';
 import MemberManagement from './components/MemberManagement';
 import EventFormPage from './components/EventFormPage';
+import SettingsPage from './components/SettingsPage';
 import EventDetailModal from './components/EventDetailModal';
 import LoginModal from './components/LoginModal';
-import SettingsModal from './components/SettingsModal';
 import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
 import SplashScreen from './components/SplashScreen';
 import InstallPrompt from './components/InstallPrompt';
+import { checkAndTriggerEventNotifications } from './utils/notificationService';
 
 export default function App() {
   const { isAdmin } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
   const { 
+    events,
     filteredEvents, 
     loading, 
     searchQuery, 
@@ -33,14 +35,27 @@ export default function App() {
     setHideCompleted
   } = useEvents();
 
-  // Active view tab: 'list' | 'calendar' | 'tambah' | 'anggota'
+  // Active view tab: 'list' | 'calendar' | 'tambah' | 'anggota' | 'pengaturan'
   const [activeTab, setActiveTab] = useState('list');
 
   // Modals & Navigation state
   const [editingEvent, setEditingEvent] = useState(null);
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  // Background Push Notification Periodic Checker (Every 60s)
+  useEffect(() => {
+    if (events && events.length > 0) {
+      checkAndTriggerEventNotifications(events);
+    }
+    const interval = setInterval(() => {
+      if (events && events.length > 0) {
+        checkAndTriggerEventNotifications(events);
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [events]);
 
   const handleOpenCreateEvent = () => {
     setEditingEvent(null);
@@ -82,12 +97,11 @@ export default function App() {
       {/* Header */}
       <Header
         onOpenLogin={() => setIsLoginModalOpen(true)}
-        onOpenSettings={() => setIsSettingsModalOpen(true)}
       />
 
       {/* Main Content Area */}
       <main className="max-w-4xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 space-y-3">
-        {/* View Content based on activeTab */}
+        {/* Tab 1: DAFTAR */}
         {activeTab === 'list' && (
           <div className="space-y-2.5">
             {/* Minimalist Live Event Banner (Only pinned on Tab Daftar) */}
@@ -182,10 +196,12 @@ export default function App() {
           </div>
         )}
 
+        {/* Tab 2: KALENDER */}
         {activeTab === 'calendar' && (
           <CalendarView onSelectEvent={handleSelectEvent} />
         )}
 
+        {/* Tab 3: TAMBAH ACARA */}
         {activeTab === 'tambah' && (
           <EventFormPage
             initialData={editingEvent}
@@ -194,8 +210,14 @@ export default function App() {
           />
         )}
 
+        {/* Tab 4: ANGGOTA */}
         {activeTab === 'anggota' && (
           <MemberManagement />
+        )}
+
+        {/* Tab 5: PENGATURAN & NOTIFIKASI */}
+        {activeTab === 'pengaturan' && (
+          <SettingsPage />
         )}
       </main>
 
@@ -205,7 +227,7 @@ export default function App() {
         setActiveTab={setActiveTab}
       />
 
-      {/* Event Detail Modal (Opens when an event card is clicked) */}
+      {/* Event Detail Modal */}
       <EventDetailModal
         isOpen={Boolean(selectedEventForDetail)}
         onClose={() => setSelectedEventForDetail(null)}
@@ -213,14 +235,10 @@ export default function App() {
         onEdit={handleOpenEditEvent}
       />
 
+      {/* Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-      />
-
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
       />
     </div>
   );

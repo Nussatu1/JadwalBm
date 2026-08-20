@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, ListFilter, Plus, Users } from 'lucide-react';
+import { Calendar, ListFilter, Plus, Users, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function BottomNav({ activeTab, setActiveTab }) {
@@ -10,6 +10,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
       <div className="flex items-center justify-around h-14">
         {/* Tab 1: Daftar Acara */}
         <button
+          type="button"
           onClick={() => setActiveTab('list')}
           className={`flex-1 h-full flex flex-col items-center justify-center min-w-[44px] min-h-[44px] transition-colors ${
             activeTab === 'list'
@@ -25,6 +26,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
 
         {/* Tab 2: Kalender */}
         <button
+          type="button"
           onClick={() => setActiveTab('calendar')}
           className={`flex-1 h-full flex flex-col items-center justify-center min-w-[44px] min-h-[44px] transition-colors ${
             activeTab === 'calendar'
@@ -41,6 +43,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
         {/* Tab 3: Tambah Acara (Admin Only) */}
         {isAdmin && (
           <button
+            type="button"
             onClick={() => setActiveTab('tambah')}
             className={`flex-1 h-full flex flex-col items-center justify-center min-w-[44px] min-h-[44px] transition-colors ${
               activeTab === 'tambah'
@@ -58,6 +61,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
 
         {/* Tab 4: Anggota */}
         <button
+          type="button"
           onClick={() => setActiveTab('anggota')}
           className={`flex-1 h-full flex flex-col items-center justify-center min-w-[44px] min-h-[44px] transition-colors ${
             activeTab === 'anggota'
@@ -68,6 +72,23 @@ export default function BottomNav({ activeTab, setActiveTab }) {
           <Users className="w-5 h-5 stroke-[1.75]" />
           <span className={`text-[11px] mt-1 ${activeTab === 'anggota' ? 'font-medium' : 'font-normal'}`}>
             Anggota
+          </span>
+        </button>
+
+        {/* Tab 5: Pengaturan */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('pengaturan')}
+          className={`flex-1 h-full flex flex-col items-center justify-center min-w-[44px] min-h-[44px] transition-colors ${
+            activeTab === 'pengaturan'
+              ? 'text-[#F6821F]'
+              : 'text-[#6B7280] hover:text-[#0B0C0E]'
+          }`}
+          title="Pengaturan"
+        >
+          <Settings className="w-5 h-5 stroke-[1.75]" />
+          <span className={`text-[11px] mt-1 ${activeTab === 'pengaturan' ? 'font-medium' : 'font-normal'}`}>
+            Pengaturan
           </span>
         </button>
       </div>
