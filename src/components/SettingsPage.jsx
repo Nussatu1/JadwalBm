@@ -327,53 +327,71 @@ export default function SettingsPage() {
           </label>
         </div>
 
-        {/* Test Audio & Notification Action Buttons */}
-        <div className="pt-2 flex flex-wrap items-center justify-end gap-2">
-          {/* Daftarkan / Sinkronkan Token HP Ini */}
-          <button
-            type="button"
-            onClick={handleSyncPushToken}
-            disabled={syncingPush}
-            className="h-8 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] text-[#DB6E0F] border border-[#FBD6B0] text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors shadow-cf-card"
-            title="Daftarkan token perangkat HP ini ke server agar menerima notifikasi saat aplikasi ditutup"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
-            <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
-          </button>
+        {/* Pusat Uji Coba & Sinkronisasi */}
+        <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+              Pusat Uji Coba & Sinkronisasi
+            </span>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              playCustomAudioNotification();
-              showToast('Memutar suara notif.mp3 🔊', 'info');
-            }}
-            className="h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center gap-1.5 transition-colors shadow-cf-card"
-          >
-            <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
-            <span>Tes Audio</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleTestNotification}
-            className="h-8 px-3 bg-[#F6F6F7] hover:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center gap-1.5 transition-colors"
-          >
-            <Send className="w-3.5 h-3.5 text-[#F6821F]" />
-            <span>Tes di HP Ini</span>
-          </button>
-
-          {/* Admin Broadcast Test to All Devices */}
-          {isAdmin && (
+          {/* Quick Action Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {/* 1. Daftarkan HP Ini */}
             <button
               type="button"
-              onClick={handleBroadcastTest}
-              disabled={broadcastLoading}
-              className="h-8 px-3.5 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-cf-card"
-              title="Kirim notifikasi tes serentak ke semua HP anggota yang terdaftar"
+              onClick={handleSyncPushToken}
+              disabled={syncingPush}
+              className="h-9 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] text-[#DB6E0F] border border-[#FBD6B0] text-[12px] font-medium rounded-[6px] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+              title="Daftarkan token HP ini ke server agar menerima notifikasi saat aplikasi ditutup"
             >
-              <Radio className={`w-3.5 h-3.5 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
-              <span>{broadcastLoading ? 'Menyiarkan...' : 'Tes ke Semua Anggota'}</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
+              <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
             </button>
+
+            {/* 2. Tes Audio notif.mp3 */}
+            <button
+              type="button"
+              onClick={() => {
+                playCustomAudioNotification();
+                showToast('Memutar suara notif.mp3 🔊', 'info');
+              }}
+              className="h-9 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+              title="Uji putar audio notif.mp3 di speaker HP ini"
+            >
+              <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
+              <span>Tes Audio</span>
+            </button>
+
+            {/* 3. Tes Notifikasi Lokal */}
+            <button
+              type="button"
+              onClick={handleTestNotification}
+              className="h-9 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+              title="Kirim notifikasi uji coba ke HP ini"
+            >
+              <Send className="w-3.5 h-3.5 text-[#2E7DD1]" />
+              <span>Tes di HP Ini</span>
+            </button>
+          </div>
+
+          {/* Admin Broadcast Button (Prominent Full Width Action Bar) */}
+          {isAdmin && (
+            <div className="pt-1 space-y-1">
+              <button
+                type="button"
+                onClick={handleBroadcastTest}
+                disabled={broadcastLoading}
+                className="w-full h-10 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12.5px] font-medium rounded-[6px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-cf-card"
+                title="Kirim notifikasi siaran serentak ke semua HP anggota yang terdaftar"
+              >
+                <Radio className={`w-4 h-4 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
+                <span>{broadcastLoading ? 'Menyiarkan ke Seluruh Perangkat...' : 'Siarkan Tes Notifikasi ke Semua Anggota'}</span>
+              </button>
+              <p className="text-[11px] text-[#6B7280] text-center">
+                Mengirim sinyal push serentak ke semua perangkat yang terdaftar di database.
+              </p>
+            </div>
           )}
         </div>
       </div>
