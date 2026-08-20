@@ -2,9 +2,9 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 /**
- * Custom Modal & Mobile Bottom Sheet Component
- * - Mobile: Slides from bottom as Bottom Sheet with top pull-indicator
- * - Desktop: Centered card modal with 8px radius
+ * Custom Centered Modal Component
+ * - Mobile & Desktop: Centered popup in middle of screen (prevents mobile keyboard obstruction)
+ * - Cloudflare Design: Rounded corners, #E5E7EB border, soft shadow, clean close button
  */
 export default function Modal({
   isOpen,
@@ -32,7 +32,7 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-150">
       {/* Backdrop tap to close */}
       <div 
         className="fixed inset-0" 
@@ -40,28 +40,23 @@ export default function Modal({
         aria-hidden="true" 
       />
 
-      {/* Modal / Bottom Sheet Container */}
+      {/* Centered Modal Container */}
       <div
-        className={`relative z-10 w-full ${maxWidth} bg-white rounded-t-[16px] sm:rounded-[8px] border-t sm:border border-[#E5E7EB] shadow-cf-modal max-h-[90vh] flex flex-col overflow-hidden animate-cf-modal`}
+        className={`relative z-10 w-full ${maxWidth} bg-white rounded-[10px] sm:rounded-[8px] border border-[#E5E7EB] shadow-cf-modal max-h-[88vh] flex flex-col overflow-hidden animate-cf-modal`}
         role="dialog"
         aria-modal="true"
       >
-        {/* Mobile Pull/Drag Indicator */}
-        <div className="pt-2.5 pb-1 sm:hidden flex justify-center">
-          <div className="w-10 h-1 bg-[#D1D5DB] rounded-full" />
-        </div>
-
         {/* Header */}
         {(title || showClose) && (
-          <div className="px-5 py-3.5 border-b border-[#E5E7EB] flex items-center justify-between bg-white shrink-0">
-            <div>
+          <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-[#E5E7EB] flex items-center justify-between bg-white shrink-0">
+            <div className="min-w-0 flex-1 pr-2">
               {title && (
-                <h3 className="text-[16px] font-semibold text-[#0B0C0E] leading-tight">
+                <div className="text-[15px] sm:text-[16px] font-semibold text-[#0B0C0E] leading-tight truncate">
                   {title}
-                </h3>
+                </div>
               )}
               {subtitle && (
-                <p className="text-[12px] text-[#6B7280] mt-0.5">
+                <p className="text-[12px] text-[#6B7280] mt-0.5 truncate">
                   {subtitle}
                 </p>
               )}
@@ -69,9 +64,10 @@ export default function Modal({
 
             {showClose && (
               <button
+                type="button"
                 onClick={onClose}
                 aria-label="Tutup"
-                className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-[#F6F6F7] rounded-[4px] transition-colors -mr-1"
+                className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-[#F6F6F7] rounded-[4px] transition-colors shrink-0 -mr-1"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -80,7 +76,7 @@ export default function Modal({
         )}
 
         {/* Scrollable Body */}
-        <div className="overflow-y-auto flex-1 p-5 text-[13px]">
+        <div className="overflow-y-auto flex-1 p-4 sm:p-5 text-[13px]">
           {children}
         </div>
       </div>
