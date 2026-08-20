@@ -7,6 +7,35 @@ export const NAMA_BULAN = [
 ];
 
 /**
+ * Membersihkan format jam jika Google Sheets mengembalikannya sebagai objek Date (misal: "Sat Dec 30 1899 09:00:00...")
+ */
+export function cleanTimeString(timeVal) {
+  if (!timeVal) return '';
+  const str = String(timeVal).trim();
+  if (!str) return '';
+
+  // 1. Ekstrak pola jam:menit HH:MM dari string apapun
+  const match = str.match(/(?:^|\s|T)(\d{1,2}):(\d{2})(?::\d{2})?/);
+  if (match) {
+    const hh = match[1].padStart(2, '0');
+    const mm = match[2];
+    return `${hh}:${mm}`;
+  }
+
+  // 2. Jika merupakan objek Date / string tanggal
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+  } catch (e) {}
+
+  return str;
+}
+
+/**
  * Format tanggal YYYY-MM-DD ke format lokal Indonesia: "Senin, 24 Agustus 2026"
  */
 export function formatTanggalIndo(dateStr) {
@@ -48,13 +77,16 @@ export function formatTanggalRingkas(dateStr) {
 }
 
 /**
- * Format rentang jam, misal: "08:00 - 12:00 WIB"
+ * Format rentang jam, misal: "09:00 - 12:00 WIB"
  */
 export function formatJam(jamMulai, jamSelesai) {
-  if (!jamMulai && !jamSelesai) return 'Waktu belum ditentukan';
-  if (jamMulai && !jamSelesai) return `${jamMulai} WIB - Selesai`;
-  if (!jamMulai && jamSelesai) return `Sampai ${jamSelesai} WIB`;
-  return `${jamMulai} - ${jamSelesai} WIB`;
+  const start = cleanTimeString(jamMulai);
+  const end = cleanTimeString(jamSelesai);
+
+  if (!start && !end) return 'Waktu belum ditentukan';
+  if (start && !end) return `${start} WIB - Selesai`;
+  if (!start && end) return `Sampai ${end} WIB`;
+  return `${start} - ${end} WIB`;
 }
 
 /**
@@ -82,16 +114,18 @@ export function isEventUpcomingOrLive(event, hoursWindow = 48) {
   const eventMonth = parseInt(dateParts[1], 10) - 1;
   const eventDay = parseInt(dateParts[2], 10);
 
+  const startClean = cleanTimeString(event.jam_mulai);
   let startHour = 0, startMin = 0;
-  if (event.jam_mulai) {
-    const timeParts = event.jam_mulai.split(':');
+  if (startClean) {
+    const timeParts = startClean.split(':');
     startHour = parseInt(timeParts[0], 10) || 0;
     startMin = parseInt(timeParts[1], 10) || 0;
   }
 
+  const endClean = cleanTimeString(event.jam_selesai);
   let endHour = 23, endMin = 59;
-  if (event.jam_selesai) {
-    const timeParts = event.jam_selesai.split(':');
+  if (endClean) {
+    const timeParts = endClean.split(':');
     endHour = parseInt(timeParts[0], 10) || 23;
     endMin = parseInt(timeParts[1], 10) || 59;
   }

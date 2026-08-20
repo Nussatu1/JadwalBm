@@ -366,13 +366,32 @@ function handleGetEvents() {
       tanggalFormatted = String(row[3] || '');
     }
 
+    // Format jam_mulai & jam_selesai ke HH:mm murni (mencegah serialisasi Date 1899)
+    let jamMulai = '';
+    if (row[4] instanceof Date) {
+      jamMulai = Utilities.formatDate(row[4], Session.getScriptTimeZone(), 'HH:mm');
+    } else {
+      const str = String(row[4] || '');
+      const match = str.match(/(\d{1,2}):(\d{2})/);
+      jamMulai = match ? match[1].padStart(2, '0') + ':' + match[2] : str;
+    }
+
+    let jamSelesai = '';
+    if (row[5] instanceof Date) {
+      jamSelesai = Utilities.formatDate(row[5], Session.getScriptTimeZone(), 'HH:mm');
+    } else {
+      const str = String(row[5] || '');
+      const match = str.match(/(\d{1,2}):(\d{2})/);
+      jamSelesai = match ? match[1].padStart(2, '0') + ':' + match[2] : str;
+    }
+
     events.push({
       id: String(row[0]),
       nama_acara: String(row[1] || ''),
       kategori: String(row[2] || 'Umum'),
       tanggal: tanggalFormatted,
-      jam_mulai: String(row[4] || ''),
-      jam_selesai: String(row[5] || ''),
+      jam_mulai: jamMulai,
+      jam_selesai: jamSelesai,
       lokasi_nama: String(row[6] || ''),
       lokasi_url: String(row[7] || ''),
       deskripsi: String(row[8] || ''),
