@@ -31,8 +31,14 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
 
   if (!isOpen || !event) return null;
 
+  // Parse format "Nama:Peran" (baru) dan "Nama" (lama) — backward compatible
   const anggotaList = event.anggota_diutus
-    ? event.anggota_diutus.split(',').map(s => s.trim()).filter(Boolean)
+    ? event.anggota_diutus.split(',').map(s => s.trim()).filter(Boolean).map(item => {
+        const idx = item.indexOf(':');
+        return idx !== -1
+          ? { nama: item.slice(0, idx).trim(), peran: item.slice(idx + 1).trim() }
+          : { nama: item.trim(), peran: '' };
+      })
     : [];
 
   const alatList = event.alat_media
@@ -130,17 +136,21 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
                 <span>Petugas Tim ({anggotaList.length})</span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {anggotaList.map((nama, idx) => (
+                {anggotaList.map(({ nama, peran }, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center px-2 py-0.5 rounded-[4px] text-[11px] font-medium bg-white text-[#0B0C0E] border border-[#E5E7EB]"
+                    className="inline-flex flex-col items-start px-2 py-0.5 rounded-[4px] text-[11px] font-medium bg-white text-[#0B0C0E] border border-[#E5E7EB]"
                   >
-                    {nama}
+                    <span>{nama}</span>
+                    {peran && (
+                      <span className="text-[10px] text-[#6B7280] font-normal">{peran}</span>
+                    )}
                   </span>
                 ))}
               </div>
             </div>
           )}
+
 
           {/* 4. Peralatan / Media Gear */}
           {alatList.length > 0 && (

@@ -30,8 +30,15 @@ export function formatWhatsAppMessage(event) {
   if (event.anggota_diutus) {
     text += `\n👥 *Petugas Tim:*\n`;
     const anggotaList = event.anggota_diutus.split(',').map(s => s.trim()).filter(Boolean);
-    anggotaList.forEach(nama => {
-      text += `  • ${nama}\n`;
+    anggotaList.forEach(item => {
+      const colonIdx = item.indexOf(':');
+      if (colonIdx !== -1) {
+        const nama = item.slice(0, colonIdx).trim();
+        const peran = item.slice(colonIdx + 1).trim();
+        text += `  • ${nama} _(${peran})_\n`;
+      } else {
+        text += `  • ${item}\n`;
+      }
     });
   }
 
