@@ -72,24 +72,31 @@ export function formatWhatsAppMessage(event) {
  */
 export function shareToWhatsApp(event, phoneOrGroupUrl = '') {
   const message = formatWhatsAppMessage(event);
+  if (!message) return;
+
   const encodedText = encodeURIComponent(message);
 
-  if (phoneOrGroupUrl && phoneOrGroupUrl.includes('chat.whatsapp.com/')) {
-    // Link grup WA: buka langsung link undangan grup
-    // WhatsApp akan membuka grup, user tinggal kirim pesan di sana
-    // Format: https://chat.whatsapp.com/XXXXX?text=...
-    const separator = phoneOrGroupUrl.includes('?') ? '&' : '?';
-    const url = `${phoneOrGroupUrl}${separator}text=${encodedText}`;
-    window.open(url, '_blank');
-  } else if (phoneOrGroupUrl && phoneOrGroupUrl.replace(/\D/g, '').length > 5) {
-    // Nomor telepon spesifik
-    const cleanPhone = phoneOrGroupUrl.replace(/\D/g, '');
-    const url = `https://wa.me/${cleanPhone}?text=${encodedText}`;
-    window.open(url, '_blank');
-  } else {
-    // Fallback: share umum WhatsApp (pilih kontak/grup di WA)
-    const url = `https://api.whatsapp.com/send?text=${encodedText}`;
-    window.open(url, '_blank');
+  // Otomatis salin pesan lengkap ke clipboard pengguna sebagai backup
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(message).catch(() => {});
   }
+
+  // Jika input adalah nomor telepon tertentu (bukan link undangan grup)
+  if (
+    phoneOrGroupUrl &&
+    !phoneOrGroupUrl.includes('chat.whatsapp.com') &&
+    phoneOrGroupUrl.replace(/\D/g, '').length > 5
+  ) {
+    const cleanPhone = phoneOrGroupUrl.replace(/\D/g, '');
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
+    window.open(url, '_blank');
+    return;
+  }
+
+  // Standar resmi WhatsApp URL untuk membagikan pesan:
+  // Membuka WhatsApp (HP/Web) dengan kotak input pesan sudah terisi lengkap,
+  // pengguna tinggal memilih grup/kontak lalu tekan Kirim.
+  const url = `https://api.whatsapp.com/send?text=${encodedText}`;
+  window.open(url, '_blank');
 }
 

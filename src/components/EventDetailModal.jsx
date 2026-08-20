@@ -24,7 +24,7 @@ import { useEvents } from '../context/EventContext';
 
 export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
   const { isAdmin } = useAuth();
-  const { config, deleteEvent, cancelEvent, completeEvent } = useEvents();
+  const { config, deleteEvent, cancelEvent, completeEvent, showToast } = useEvents();
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
@@ -206,7 +206,10 @@ export default function EventDetailModal({ isOpen, onClose, event, onEdit }) {
           <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between gap-2 flex-wrap">
             {/* WhatsApp Share Button */}
             <button
-              onClick={() => shareToWhatsApp(event, config?.whatsapp_group_link)}
+              onClick={() => {
+                shareToWhatsApp(event, config?.whatsapp_group_link);
+                if (showToast) showToast('Pesan WA disiapkan & disalin ke clipboard!', 'success');
+              }}
               className="h-8 px-3.5 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors"
             >
               <Send className="w-3.5 h-3.5" />
