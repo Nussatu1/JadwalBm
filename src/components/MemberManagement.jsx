@@ -1,0 +1,255 @@
+import React, { useState } from 'react';
+import { Users, UserPlus, Edit2, Trash2, CheckCircle2, XCircle, Search } from 'lucide-react';
+import { useEvents } from '../context/EventContext';
+import { useAuth } from '../context/AuthContext';
+import Modal from './ui/Modal';
+import ConfirmDialog from './ui/ConfirmDialog';
+import Checkbox from './ui/Checkbox';
+
+export default function MemberManagement() {
+  const { anggota, createAnggota, updateAnggota, deleteAnggota, showToast } = useEvents();
+  const { isAdmin } = useAuth();
+
+  const [search, setSearch] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formData, setFormData] = useState({
+    nama: '',
+    peran: 'Videografer',
+    aktif: true
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  // Confirm delete state
+  const [itemToDelete, setItemToDelete] = useState(null);
+
+  const filteredAnggota = anggota.filter(a => {
+    const q = search.toLowerCase();
+    return (
+      (a.nama || '').toLowerCase().includes(q) ||
+      (a.peran || '').toLowerCase().includes(q)
+    );
+  });
+
+  const handleOpenCreate = () => {
+    setEditingId(null);
+    setFormData({ nama: '', peran: 'Videografer', aktif: true });
+    setIsFormOpen(true);
+  };
+
+  const handleOpenEdit = (item) => {
+    setEditingId(item.id);
+    setFormData({
+      nama: item.nama,
+      peran: item.peran || '',
+      aktif: item.aktif !== false
+    });
+    setIsFormOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.nama.trim()) {
+      showToast('Nama anggota wajib diisi!', 'error');
+      return;
+    }
+
+    setSubmitting(true);
+    let res;
+    if (editingId) {
+      res = await updateAnggota(editingId, formData);
+    } else {
+      res = await createAnggota(formData);
+    }
+    setSubmitting(false);
+
+    if (res.success) {
+      setIsFormOpen(false);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (itemToDelete) {
+      deleteAnggota(itemToDelete.id);
+      setItemToDelete(null);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Header Card */}
+      <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-4 shadow-cf-card">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <h2 className="text-[16px] font-semibold text-[#0B0C0E] flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#F6821F]" />
+              <span>Master Data Anggota</span>
+            </h2>
+            <p className="text-[12px] text-[#6B7280]">
+              Daftar anggota tim Bakid Multimedia
+            </p>
+          </div>
+
+          {isAdmin && (
+            <button
+              onClick={handleOpenCreate}
+              className="h-8 px-3 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors shrink-0"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Tambah</span>
+            </button>
+          )}
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Cari nama atau peran anggota..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full h-9 pl-9 pr-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+          />
+        </div>
+      </div>
+
+      {/* Member List */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {filteredAnggota.map(item => (
+          <div
+            key={item.id}
+            className="bg-white rounded-[8px] border border-[#E5E7EB] p-3 shadow-cf-card flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-[6px] bg-[#F6F6F7] border border-[#E5E7EB] text-[#0B0C0E] font-semibold flex items-center justify-center text-[12px] shrink-0">
+                {item.nama.slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <h3 className="text-[13px] font-semibold text-[#0B0C0E] leading-tight">
+                  {item.nama}
+                </h3>
+                <p className="text-[11px] text-[#6B7280] mt-0.5">
+                  {item.peran || 'Multimedia'}
+                </p>
+                <div className="mt-1">
+                  {item.aktif ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0F9D58] bg-[#EBF9F1] border border-[#B7EBD0] px-1.5 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-2.5 h-2.5" /> Aktif
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#6B7280] bg-[#F3F4F6] border border-[#E5E7EB] px-1.5 py-0.5 rounded-full">
+                      <XCircle className="w-2.5 h-2.5" /> Nonaktif
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {isAdmin && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleOpenEdit(item)}
+                  title="Edit Anggota"
+                  aria-label="Edit Anggota"
+                  className="h-8 w-8 flex items-center justify-center text-[#6B7280] hover:text-[#0B0C0E] hover:bg-[#F6F6F7] rounded-[6px] border border-[#E5E7EB] transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setItemToDelete(item)}
+                  title="Hapus Anggota"
+                  aria-label="Hapus Anggota"
+                  className="h-8 w-8 flex items-center justify-center text-[#6B7280] hover:text-[#E5484D] hover:bg-[#FDF1F2] rounded-[6px] border border-[#E5E7EB] transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {filteredAnggota.length === 0 && (
+        <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-6 text-center">
+          <p className="text-[13px] text-[#6B7280]">Tidak ada anggota yang cocok dengan pencarian.</p>
+        </div>
+      )}
+
+      {/* Add / Edit Member Modal (Custom Modal) */}
+      <Modal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        title={editingId ? 'Edit Data Anggota' : 'Tambah Anggota Baru'}
+        maxWidth="max-w-sm"
+      >
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-[12px] font-medium text-[#0B0C0E] mb-1">
+              Nama Lengkap
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="Contoh: Ahmad Fauzi"
+              value={formData.nama}
+              onChange={e => setFormData({ ...formData, nama: e.target.value })}
+              className="w-full h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[12px] font-medium text-[#0B0C0E] mb-1">
+              Peran / Posisi
+            </label>
+            <input
+              type="text"
+              placeholder="Misal: Videografer, Editor, Fotografer, Drone"
+              value={formData.peran}
+              onChange={e => setFormData({ ...formData, peran: e.target.value })}
+              className="w-full h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+            />
+          </div>
+
+          <div className="pt-1">
+            <Checkbox
+              id="memberAktifStatus"
+              checked={formData.aktif}
+              onChange={e => setFormData({ ...formData, aktif: e.target.checked })}
+              label="Status Aktif"
+              description="Anggota ditampilkan dalam daftar pilihan penugasan acara"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsFormOpen(false)}
+              className="h-8 px-3.5 bg-white border border-[#E5E7EB] hover:bg-[#F6F6F7] text-[#0B0C0E] font-medium rounded-[6px] text-[12px]"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="h-8 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white font-medium rounded-[6px] text-[12px] disabled:opacity-50"
+            >
+              {submitting ? 'Menyimpan...' : 'Simpan'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Member Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(itemToDelete)}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Hapus Anggota Tim?"
+        message={`Yakin ingin menghapus "${itemToDelete?.nama}" dari daftar master anggota?`}
+        confirmText="Ya, Hapus"
+        variant="danger"
+      />
+    </div>
+  );
+}

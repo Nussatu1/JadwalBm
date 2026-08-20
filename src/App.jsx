@@ -1,0 +1,223 @@
+import React, { useState } from 'react';
+import { 
+  Plus, 
+  Search, 
+  CalendarDays,
+  CheckCircle2
+} from 'lucide-react';
+import { useAuth } from './context/AuthContext';
+import { useEvents } from './context/EventContext';
+import Header from './components/Header';
+import NotificationBanner from './components/NotificationBanner';
+import EventCard from './components/EventCard';
+import CalendarView from './components/CalendarView';
+import MemberManagement from './components/MemberManagement';
+import EventFormPage from './components/EventFormPage';
+import EventDetailModal from './components/EventDetailModal';
+import LoginModal from './components/LoginModal';
+import SettingsModal from './components/SettingsModal';
+import BottomNav from './components/BottomNav';
+import Toast from './components/Toast';
+import SplashScreen from './components/SplashScreen';
+
+export default function App() {
+  const { isAdmin } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
+  const { 
+    filteredEvents, 
+    loading, 
+    searchQuery, 
+    setSearchQuery,
+    hideCompleted,
+    setHideCompleted
+  } = useEvents();
+
+  // Active view tab: 'list' | 'calendar' | 'tambah' | 'anggota'
+  const [activeTab, setActiveTab] = useState('list');
+
+  // Modals & Navigation state
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [selectedEventForDetail, setSelectedEventForDetail] = useState(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  const handleOpenCreateEvent = () => {
+    setEditingEvent(null);
+    setActiveTab('tambah');
+  };
+
+  const handleOpenEditEvent = (event) => {
+    setEditingEvent(event);
+    setActiveTab('tambah');
+  };
+
+  const handleSelectEvent = (event) => {
+    setSelectedEventForDetail(event);
+  };
+
+  const handleFormSuccess = () => {
+    setEditingEvent(null);
+    setActiveTab('list');
+  };
+
+  const handleFormCancel = () => {
+    setEditingEvent(null);
+    setActiveTab('list');
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F6F6F7] text-[#0B0C0E] pb-20 sm:pb-24">
+      {/* Opening / Splash Screen Animation */}
+      {showSplash && (
+        <SplashScreen onFinish={() => setShowSplash(false)} duration={2000} />
+      )}
+
+      {/* Toast Notification Container */}
+      <Toast />
+
+      {/* Header */}
+      <Header
+        onOpenLogin={() => setIsLoginModalOpen(true)}
+        onOpenSettings={() => setIsSettingsModalOpen(true)}
+      />
+
+      {/* Main Content Area */}
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 space-y-3">
+        {/* View Content based on activeTab */}
+        {activeTab === 'list' && (
+          <div className="space-y-2.5">
+            {/* Minimalist Live Event Banner (Only pinned on Tab Daftar) */}
+            <NotificationBanner onSelectEvent={handleSelectEvent} />
+
+            {/* Search Bar & Actions */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Cari acara, lokasi, anggota, atau gear..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full h-9 pl-9 pr-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F] shadow-cf-card"
+                />
+              </div>
+
+              {/* Toggle Sembunyikan Acara Selesai */}
+              <button
+                type="button"
+                onClick={() => setHideCompleted(!hideCompleted)}
+                className={`h-9 px-2.5 rounded-[6px] border text-[12px] font-medium flex items-center gap-1.5 transition-colors shrink-0 shadow-cf-card ${
+                  hideCompleted
+                    ? 'bg-[#0B0C0E] border-[#0B0C0E] text-white'
+                    : 'bg-white border-[#E5E7EB] text-[#6B7280] hover:text-[#0B0C0E] hover:bg-[#F6F6F7]'
+                }`}
+                title={hideCompleted ? "Acara Selesai Disembunyikan (Klik untuk Tampilkan)" : "Klik untuk Sembunyikan Acara Selesai"}
+              >
+                <CheckCircle2 className={`w-3.5 h-3.5 ${hideCompleted ? 'text-[#0F9D58]' : 'text-[#9CA3AF]'}`} />
+                <span className="hidden sm:inline">{hideCompleted ? 'Selesai: Sembunyi' : 'Selesai: Tampil'}</span>
+              </button>
+
+              {/* Desktop Quick Add Button */}
+              {isAdmin && (
+                <button
+                  onClick={handleOpenCreateEvent}
+                  className="hidden sm:flex items-center gap-1.5 h-9 px-3.5 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-medium rounded-[6px] transition-colors shrink-0 shadow-cf-card"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tambah Acara</span>
+                </button>
+              )}
+            </div>
+
+            {/* Event List */}
+            {loading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-white rounded-[8px] p-3.5 border border-[#E5E7EB] animate-pulse space-y-2">
+                    <div className="h-3.5 bg-[#E5E7EB] rounded w-1/4" />
+                    <div className="h-4.5 bg-[#E5E7EB] rounded w-3/4" />
+                    <div className="h-3 bg-[#E5E7EB] rounded w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredEvents.length === 0 ? (
+              <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-8 text-center space-y-2">
+                <div className="w-10 h-10 rounded-[6px] bg-[#F6F6F7] border border-[#E5E7EB] text-[#6B7280] flex items-center justify-center mx-auto">
+                  <CalendarDays className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-[#0B0C0E] text-[14px]">
+                    Tidak ada agenda acara
+                  </h3>
+                  <p className="text-[12px] text-[#6B7280] max-w-xs mx-auto">
+                    {searchQuery
+                      ? 'Tidak ada acara yang cocok dengan kata kunci pencarian.'
+                      : 'Jadwal liputan belum ditambahkan ke sistem.'}
+                  </p>
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={handleOpenCreateEvent}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#F6821F] text-white text-[12px] font-medium rounded-[6px] hover:bg-[#DB6E0F] transition-colors mt-2"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Tambah Acara Baru
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredEvents.map(event => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    onSelect={handleSelectEvent}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'calendar' && (
+          <CalendarView onSelectEvent={handleSelectEvent} />
+        )}
+
+        {activeTab === 'tambah' && (
+          <EventFormPage
+            initialData={editingEvent}
+            onCancel={handleFormCancel}
+            onSuccess={handleFormSuccess}
+          />
+        )}
+
+        {activeTab === 'anggota' && (
+          <MemberManagement />
+        )}
+      </main>
+
+      {/* Bottom Navigation */}
+      <BottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
+
+      {/* Event Detail Modal (Opens when an event card is clicked) */}
+      <EventDetailModal
+        isOpen={Boolean(selectedEventForDetail)}
+        onClose={() => setSelectedEventForDetail(null)}
+        event={selectedEventForDetail}
+        onEdit={handleOpenEditEvent}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+      />
+    </div>
+  );
+}
