@@ -15,7 +15,8 @@ import {
   Eye, 
   EyeOff, 
   ShieldCheck,
-  Send
+  Send,
+  Volume2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useEvents } from '../context/EventContext';
@@ -25,7 +26,8 @@ import {
   getNotificationSettings, 
   saveNotificationSettings, 
   requestNotificationPermission, 
-  showSystemNotification 
+  showSystemNotification,
+  playCustomAudioNotification
 } from '../utils/notificationService';
 
 export default function SettingsPage() {
@@ -266,10 +268,42 @@ export default function SettingsPage() {
               className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
             />
           </label>
+
+          {/* Custom Sound Toggle (notif.mp3) */}
+          <label className="flex items-center justify-between cursor-pointer group pt-1 border-t border-[#F3F4F6]">
+            <div className="space-y-0.5">
+              <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5 text-[#F6821F]" />
+                <span>Gunakan Nada Kustom (notif.mp3)</span>
+              </p>
+              <p className="text-[11px] text-[#6B7280]">
+                Memutar file audio notif.mp3 khusus (bukan nada dering bawaan HP)
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              disabled={!notifSettings.enabled}
+              checked={notifSettings.customAudio !== false}
+              onChange={() => handleToggleSetting('customAudio')}
+              className="w-4 h-4 accent-[#F6821F] cursor-pointer disabled:opacity-40"
+            />
+          </label>
         </div>
 
-        {/* Test Button */}
-        <div className="pt-2 flex items-center justify-end">
+        {/* Test Audio & Notification Action Buttons */}
+        <div className="pt-2 flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              playCustomAudioNotification();
+              showToast('Memutar suara notif.mp3 🔊', 'info');
+            }}
+            className="h-8 px-3 bg-white hover:bg-[#F6F6F7] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center gap-1.5 transition-colors shadow-cf-card"
+          >
+            <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
+            <span>Tes Suara Audio</span>
+          </button>
+
           <button
             type="button"
             onClick={handleTestNotification}

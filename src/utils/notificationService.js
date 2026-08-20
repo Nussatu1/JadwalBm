@@ -1,6 +1,6 @@
 /**
  * Web Push & Background Notification Service for Jadwal Bakid Multimedia
- * Handles permission, scheduled checks for H-1, Event Start, and Event End.
+ * Handles permission, custom audio (/notif.mp3), scheduled checks for H-1, Event Start, and Event End.
  */
 
 import { parseAnyDate, cleanTimeString, getTodayString } from './dateUtils';
@@ -12,10 +12,32 @@ const STORAGE_KEYS = {
 
 export const DEFAULT_NOTIF_SETTINGS = {
   enabled: false,
+  customAudio: true, // Use /notif.mp3 instead of device default sound
   notifyHMinus1: true,
   notifyEventStart: true,
   notifyEventEnd: true
 };
+
+let audioInstance = null;
+
+export function playCustomAudioNotification() {
+  try {
+    if (!audioInstance) {
+      audioInstance = new Audio('/notif.mp3');
+    }
+    audioInstance.currentTime = 0;
+    const playPromise = audioInstance.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((e) => {
+        console.warn('Audio auto-play policy prevented sound playback:', e);
+      });
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to play custom notification audio:', e);
+    return false;
+  }
+}
 
 export function getNotificationSettings() {
   try {
@@ -56,6 +78,13 @@ export async function requestNotificationPermission() {
 }
 
 export async function showSystemNotification(title, body, options = {}) {
+  const settings = getNotificationSettings();
+
+  // Play custom MP3 audio if enabled
+  if (settings.customAudio !== false) {
+    playCustomAudioNotification();
+  }
+
   if (!('Notification' in window) || Notification.permission !== 'granted') {
     return false;
   }
@@ -65,6 +94,7 @@ export async function showSystemNotification(title, body, options = {}) {
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png',
     vibrate: [200, 100, 200],
+    silent: settings.customAudio !== false, // Silence OS generic beep when custom MP3 is active
     tag: options.tag || 'bakid-notif-' + Date.now(),
     renotify: true,
     data: options.data || {},
