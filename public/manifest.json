@@ -10,6 +10,7 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "id",
+  "gcm_sender_id": "103953800507",
   "categories": ["productivity", "utilities", "media"],
   "icons": [
     {

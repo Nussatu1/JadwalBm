@@ -36,11 +36,9 @@ export async function subscribeUserToPush() {
     return { success: false, message: 'Push Manager tidak didukung di browser ini' };
   }
   try {
-    // 1. Pastikan Service Worker sudah siap
-    let reg;
-    try {
-      reg = await navigator.serviceWorker.ready;
-    } catch (e) {
+    // 1. Pastikan Service Worker sudah siap dan aktif
+    let reg = await navigator.serviceWorker.ready;
+    if (!reg) {
       reg = await navigator.serviceWorker.register('/sw.js');
       reg = await navigator.serviceWorker.ready;
     }
@@ -49,20 +47,17 @@ export async function subscribeUserToPush() {
       return { success: false, message: 'PushManager tidak tersedia di Service Worker' };
     }
 
-    // 2. Periksa & refresh subscription lama dengan VAPID key baru
-    let subscription = await reg.pushManager.getSubscription();
     const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
 
-    if (subscription) {
-      try {
-        await subscription.unsubscribe();
-      } catch (err) {}
-    }
+    // 2. Ambil subscription yang ada atau buat baru
+    let subscription = await reg.pushManager.getSubscription();
 
-    subscription = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: convertedKey
-    });
+    if (!subscription) {
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedKey
+      });
+    }
 
     // 3. Serialisasi dan kirim token ke server Cloudflare & Google Sheets
     const subJson = subscription.toJSON ? subscription.toJSON() : JSON.parse(JSON.stringify(subscription));
@@ -79,7 +74,12 @@ export async function subscribeUserToPush() {
     return { success: true, subscription: subJson, data: resData };
   } catch (e) {
     console.error('subscribeUserToPush error:', e);
-    return { success: false, message: e.message };
+    return { 
+      success: false, 
+      message: e.name === 'AbortError' 
+        ? 'Layanan Push Google/Browser sedang sibuk. Silakan coba klik tombol Daftarkan lagi.' 
+        : e.message 
+    };
   }
 }
 
