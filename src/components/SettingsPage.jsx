@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Bell, 
-  BellRing, 
   CheckCircle2, 
   AlertCircle, 
   MessageSquare, 
   Key, 
   Save, 
-  Smartphone, 
   RefreshCw, 
   User, 
-  Lock, 
   LogOut, 
   Eye, 
   EyeOff, 
@@ -19,7 +16,7 @@ import {
   Volume2,
   Radio,
   ChevronDown,
-  ChevronUp
+  Sliders
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useEvents } from '../context/EventContext';
@@ -60,6 +57,8 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Accordion Expand/Collapse States (all cleanly collapsed by default)
   const [isNotifExpanded, setIsNotifExpanded] = useState(false);
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [isConfigExpanded, setIsConfigExpanded] = useState(false);
@@ -125,7 +124,6 @@ export default function SettingsPage() {
     const res = await broadcastTestNotificationToAll();
     setBroadcastLoading(false);
     if (res.success) {
-      // Toast saja sebagai konfirmasi — push dari server sudah akan datang sendiri ke HP admin
       showToast(res.message || 'Sinyal tes disiarkan ke seluruh anggota!', 'success');
     } else {
       showToast(res.message || 'Gagal menyiarkan tes notifikasi', 'error');
@@ -206,30 +204,40 @@ export default function SettingsPage() {
   const isConnected = api.isConfigured();
 
   return (
-    <div className="space-y-4 max-w-2xl mx-auto pb-6 animate-cf-modal">
-      {/* Header Section */}
-      <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-4 shadow-cf-card">
-        <h2 className="text-[16px] font-bold text-[#0B0C0E]">
-          Pengaturan Aplikasi & Notifikasi
-        </h2>
-        <p className="text-[12px] text-[#6B7280] mt-0.5">
-          Kelola notifikasi otomatis, akses admin, profil tim, dan tautan komunikasi.
-        </p>
+    <div className="space-y-3 max-w-2xl mx-auto pb-8 animate-cf-modal">
+      {/* ── Page Header ── */}
+      <div className="bg-white rounded-[10px] border border-[#E5E7EB] p-4 shadow-cf-card flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-[16px] font-bold text-[#0B0C0E] flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-[#F6821F]" />
+            <span>Pengaturan Aplikasi</span>
+          </h2>
+          <p className="text-[12px] text-[#6B7280] mt-0.5">
+            Kelola notifikasi, profil penugasan, dan konfigurasi sistem.
+          </p>
+        </div>
+
+        {isAdmin && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DB6E0F] bg-[#FFF5EA] border border-[#FBD6B0] px-2.5 py-1 rounded-[6px] shrink-0">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#F6821F]" />
+            <span>Admin</span>
+          </span>
+        )}
       </div>
 
-      {/* 1. NOTIFIKASI PUSH OTOMATIS */}
-      <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-cf-card overflow-hidden">
-        {/* Header Card (Klik untuk Buka/Ciutkan) */}
+      {/* ── 1. NOTIFIKASI PUSH OTOMATIS ── */}
+      <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden transition-all">
+        {/* Accordion Trigger Header */}
         <div
           onClick={() => setIsNotifExpanded(!isNotifExpanded)}
-          className="w-full p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F6F6F7]/60 transition-colors cursor-pointer select-none"
+          className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-[6px] bg-[#FFF5EA] text-[#F6821F] flex items-center justify-center shrink-0 border border-[#FBD6B0]/60">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-[7px] bg-[#FFF5EA] text-[#F6821F] flex items-center justify-center shrink-0 border border-[#FBD6B0]/60 shadow-2xs">
               <Bell className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-[14px] font-semibold text-[#0B0C0E] truncate">
+              <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
                 Notifikasi Push Otomatis
               </h3>
               <p className="text-[11px] text-[#6B7280] truncate">
@@ -238,43 +246,39 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 ml-2">
-            {/* Master Switch Button */}
+          <div className="flex items-center gap-2 shrink-0 ml-2">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 handleToggleMasterNotif();
               }}
-              className={`h-7 px-3 rounded-[4px] text-[12px] font-medium transition-colors ${
+              className={`h-6.5 px-2.5 rounded-[5px] text-[11.5px] font-semibold transition-colors ${
                 notifSettings.enabled
-                  ? 'bg-[#0F9D58] hover:bg-[#0B8043] text-white'
-                  : 'bg-[#F6F6F7] border border-[#E5E7EB] text-[#6B7280] hover:text-[#0B0C0E]'
+                  ? 'bg-[#0F9D58] hover:bg-[#0B8043] text-white shadow-2xs'
+                  : 'bg-[#F3F4F6] border border-[#E5E7EB] text-[#6B7280] hover:text-[#0B0C0E]'
               }`}
             >
               {notifSettings.enabled ? 'Aktif' : 'Nonaktif'}
             </button>
 
-            {/* Chevron Toggle */}
-            <div className="w-7 h-7 rounded-[6px] border border-[#E5E7EB] bg-white flex items-center justify-center text-[#6B7280] shrink-0 ml-1">
-              {isNotifExpanded ? (
-                <ChevronUp className="w-4 h-4 text-[#0B0C0E]" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
-              )}
-            </div>
+            <ChevronDown 
+              className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
+                isNotifExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
+              }`} 
+            />
           </div>
         </div>
 
-        {/* Content Body (Hanya tampil saat dibuka) */}
+        {/* Content Body */}
         {isNotifExpanded && (
-          <div className="p-4 pt-3 space-y-3.5 border-t border-[#E5E7EB]">
+          <div className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/40">
             {/* Sub-toggles */}
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {/* H-1 */}
-              <label className="flex items-center justify-between cursor-pointer group">
+              <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
                 <div className="space-y-0.5">
-                  <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                  <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
                     Pengingat H-1 (Besok Ada Acara)
                   </p>
                   <p className="text-[11px] text-[#6B7280]">
@@ -291,9 +295,9 @@ export default function SettingsPage() {
               </label>
 
               {/* Start Event */}
-              <label className="flex items-center justify-between cursor-pointer group">
+              <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
                 <div className="space-y-0.5">
-                  <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                  <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
                     Acara Hari Ini Mulai (On-Air)
                   </p>
                   <p className="text-[11px] text-[#6B7280]">
@@ -310,9 +314,9 @@ export default function SettingsPage() {
               </label>
 
               {/* End Event */}
-              <label className="flex items-center justify-between cursor-pointer group">
+              <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB]">
                 <div className="space-y-0.5">
-                  <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
+                  <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors">
                     Acara Selesai (Manual / Sesuai Jam)
                   </p>
                   <p className="text-[11px] text-[#6B7280]">
@@ -328,15 +332,15 @@ export default function SettingsPage() {
                 />
               </label>
 
-              {/* Custom Sound Toggle (notif.mp3) */}
-              <label className="flex items-center justify-between cursor-pointer group pt-1 border-t border-[#F3F4F6]">
+              {/* Custom Sound Toggle */}
+              <label className="flex items-center justify-between p-2 rounded-[6px] hover:bg-white transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB] pt-2 border-t border-[#F3F4F6]">
                 <div className="space-y-0.5">
-                  <p className="text-[13px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors flex items-center gap-1.5">
+                  <p className="text-[12.5px] font-medium text-[#0B0C0E] group-hover:text-[#F6821F] transition-colors flex items-center gap-1.5">
                     <Volume2 className="w-3.5 h-3.5 text-[#F6821F]" />
                     <span>Gunakan Nada Kustom (notif.mp3)</span>
                   </p>
                   <p className="text-[11px] text-[#6B7280]">
-                    Memutar file audio notif.mp3 khusus (bukan nada dering bawaan HP)
+                    Memutar audio notif.mp3 khusus saat notifikasi masuk
                   </p>
                 </div>
                 <input
@@ -351,46 +355,38 @@ export default function SettingsPage() {
 
             {/* Pusat Uji Coba & Sinkronisasi */}
             <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
-                  Pusat Uji Coba & Sinkronisasi
-                </span>
-              </div>
+              <span className="text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider">
+                Pusat Uji Coba & Sinkronisasi
+              </span>
 
               {/* Quick Action Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {/* 1. Daftarkan HP Ini */}
                 <button
                   type="button"
                   onClick={handleSyncPushToken}
                   disabled={syncingPush}
-                  className="h-9 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] text-[#DB6E0F] border border-[#FBD6B0] text-[12px] font-medium rounded-[6px] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-                  title="Daftarkan token HP ini ke server agar menerima notifikasi saat aplikasi ditutup"
+                  className="h-8.5 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] text-[#DB6E0F] border border-[#FBD6B0] text-[11.5px] font-medium rounded-[6px] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
                   <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
                 </button>
 
-                {/* 2. Tes Audio notif.mp3 */}
                 <button
                   type="button"
                   onClick={() => {
                     playCustomAudioNotification();
                     showToast('Memutar suara notif.mp3 🔊', 'info');
                   }}
-                  className="h-9 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-                  title="Uji putar audio notif.mp3 di speaker HP ini"
+                  className="h-8.5 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[11.5px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                 >
                   <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
                   <span>Tes Audio</span>
                 </button>
 
-                {/* 3. Tes Notifikasi Lokal */}
                 <button
                   type="button"
                   onClick={handleTestNotification}
-                  className="h-9 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[12px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-                  title="Kirim notifikasi uji coba ke HP ini"
+                  className="h-8.5 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[11.5px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                 >
                   <Send className="w-3.5 h-3.5 text-[#2E7DD1]" />
                   <span>Tes di HP Ini</span>
@@ -399,19 +395,18 @@ export default function SettingsPage() {
 
               {/* Admin Broadcast Button */}
               {isAdmin && (
-                <div className="pt-1 space-y-1">
+                <div className="pt-1.5 space-y-1">
                   <button
                     type="button"
                     onClick={handleBroadcastTest}
                     disabled={broadcastLoading}
-                    className="w-full h-10 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12.5px] font-medium rounded-[6px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-cf-card"
-                    title="Kirim notifikasi siaran serentak ke semua HP anggota yang terdaftar"
+                    className="w-full h-9.5 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12px] font-semibold rounded-[6px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-cf-card"
                   >
                     <Radio className={`w-4 h-4 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
                     <span>{broadcastLoading ? 'Menyiarkan ke Seluruh Perangkat...' : 'Siarkan Tes Notifikasi ke Semua Anggota'}</span>
                   </button>
-                  <p className="text-[11px] text-[#6B7280] text-center">
-                    Mengirim sinyal push serentak ke semua perangkat yang terdaftar di database.
+                  <p className="text-[10.5px] text-[#6B7280] text-center">
+                    Mengirim sinyal push serentak ke semua perangkat yang terdaftar di server.
                   </p>
                 </div>
               )}
@@ -420,57 +415,54 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* 2. PROFIL TIM & AKSES ADMIN */}
-      <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-cf-card overflow-hidden">
-        {/* Header Card (Klik untuk Buka/Ciutkan) */}
-        <button
-          type="button"
+      {/* ── 2. PROFIL TIM & AKSES ADMIN ── */}
+      <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden transition-all">
+        {/* Accordion Trigger Header */}
+        <div
           onClick={() => setIsProfileExpanded(!isProfileExpanded)}
-          className="w-full p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F6F6F7]/60 transition-colors"
+          className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-[6px] bg-[#F6F6F7] text-[#0B0C0E] flex items-center justify-center shrink-0 border border-[#E5E7EB]">
-              <User className="w-4 h-4 text-[#6B7280]" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-[7px] bg-[#EEF6FF] text-[#2E7DD1] flex items-center justify-center shrink-0 border border-[#C8E0FB] shadow-2xs">
+              <User className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-[14px] font-semibold text-[#0B0C0E] truncate">
-                Status & Personalisasi
+              <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
+                Status & Personalisasi Profil
               </h3>
               <p className="text-[11px] text-[#6B7280] truncate">
-                {isAdmin ? 'Anda sedang dalam Hak Akses Admin' : 'Mode Penonton / Anggota Tim'}
+                {isAdmin ? 'Hak Akses Admin Aktif' : 'Mode Anggota Tim / Penonton'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          <div className="flex items-center gap-2 shrink-0 ml-2">
             {isAdmin ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#DB6E0F] bg-[#FFF5EA] border border-[#FBD6B0] px-2 py-0.5 rounded-[4px]">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DB6E0F] bg-[#FFF5EA] border border-[#FBD6B0] px-2 py-0.5 rounded-[5px]">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#F6821F]" />
-                <span className="hidden xs:inline">Admin Aktif</span>
+                <span>Admin</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B7280] bg-[#F6F6F7] border border-[#E5E7EB] px-2 py-0.5 rounded-[4px]">
-                <span className="hidden xs:inline">Anggota Tim</span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B7280] bg-[#F3F4F6] border border-[#E5E7EB] px-2 py-0.5 rounded-[5px]">
+                Anggota
               </span>
             )}
 
-            <div className="w-7 h-7 rounded-[6px] border border-[#E5E7EB] bg-white flex items-center justify-center text-[#6B7280] shrink-0 ml-1">
-              {isProfileExpanded ? (
-                <ChevronUp className="w-4 h-4 text-[#0B0C0E]" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
-              )}
-            </div>
+            <ChevronDown 
+              className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
+                isProfileExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
+              }`} 
+            />
           </div>
-        </button>
+        </div>
 
-        {/* Content Body (Hanya tampil saat dibuka) */}
+        {/* Content Body */}
         {isProfileExpanded && (
-          <div className="p-4 pt-3 space-y-4 border-t border-[#E5E7EB]">
+          <div className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/40">
             {/* Set Profil Tim */}
-            <form onSubmit={handleSaveProfile} className="space-y-2">
+            <form onSubmit={handleSaveProfile} className="space-y-1.5">
               <label className="block text-[12px] font-medium text-[#0B0C0E]">
-                Nama Anda (Personalisasi Tim)
+                Nama Anda (Personalisasi Profil)
               </label>
               <div className="flex gap-2">
                 <input
@@ -479,7 +471,7 @@ export default function SettingsPage() {
                   placeholder="Pilih atau ketik nama Anda..."
                   value={customName}
                   onChange={e => setCustomName(e.target.value)}
-                  className="flex-1 h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                  className="flex-1 h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                 />
                 <datalist id="settings-member-suggestions">
                   {anggota.map(a => (
@@ -488,16 +480,16 @@ export default function SettingsPage() {
                 </datalist>
                 <button
                   type="submit"
-                  className="h-9 px-3.5 bg-[#F6821F] hover:bg-[#DB6E0F] text-white text-[12px] font-medium rounded-[6px] transition-colors"
+                  className="h-9 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] text-white text-[12px] font-semibold rounded-[6px] transition-colors shadow-2xs shrink-0"
                 >
                   Simpan
                 </button>
               </div>
             </form>
 
-            {/* Login Admin (Jika belum login) */}
+            {/* Login Admin (Hanya tampil jika belum login) */}
             {!isAdmin && (
-              <form onSubmit={handleAdminLogin} className="pt-3 border-t border-[#E5E7EB] space-y-2">
+              <form onSubmit={handleAdminLogin} className="pt-3 border-t border-[#E5E7EB] space-y-1.5">
                 <label className="block text-[12px] font-medium text-[#0B0C0E]">
                   Masuk sebagai Admin
                 </label>
@@ -508,12 +500,12 @@ export default function SettingsPage() {
                       placeholder="Masukkan password admin..."
                       value={adminPasswordInput}
                       onChange={e => setAdminPasswordInput(e.target.value)}
-                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] text-[#0B0C0E] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowAdminPass(!showAdminPass)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0B0C0E] p-1"
                     >
                       {showAdminPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
@@ -521,9 +513,9 @@ export default function SettingsPage() {
                   <button
                     type="submit"
                     disabled={loginLoading}
-                    className="h-9 px-4 bg-[#0B0C0E] hover:bg-[#27272A] text-white text-[12px] font-medium rounded-[6px] transition-colors disabled:opacity-50"
+                    className="h-9 px-4 bg-[#0B0C0E] hover:bg-[#27272A] text-white text-[12px] font-semibold rounded-[6px] transition-colors disabled:opacity-50 shrink-0"
                   >
-                    {loginLoading ? 'Memverifikasi...' : 'Login'}
+                    {loginLoading ? 'Memverifikasi...' : 'Login Admin'}
                   </button>
                 </div>
               </form>
@@ -532,41 +524,40 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* 3. PENGATURAN DATABASE & KONFIGURASI (ADMIN ONLY / GENERAL) */}
+      {/* ── 3. KONFIGURASI WHATSAPP & PASSWORD (ADMIN ONLY) ── */}
       {isAdmin && (
-        <div className="bg-white rounded-[8px] border border-[#E5E7EB] shadow-cf-card overflow-hidden">
-          {/* Header Card (Klik untuk Ciutkan / Buka) */}
-          <button
-            type="button"
+        <div className="bg-white rounded-[10px] border border-[#E5E7EB] shadow-cf-card overflow-hidden transition-all">
+          {/* Accordion Trigger Header */}
+          <div
             onClick={() => setIsConfigExpanded(!isConfigExpanded)}
-            className="w-full p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F6F6F7]/60 transition-colors"
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-[#F9FAFB] transition-colors cursor-pointer select-none"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-[6px] bg-[#F6F6F7] text-[#0B0C0E] flex items-center justify-center shrink-0 border border-[#E5E7EB]">
-                <Key className="w-4 h-4 text-[#F6821F]" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-[7px] bg-[#EBF9F1] text-[#0F9D58] flex items-center justify-center shrink-0 border border-[#B7EBD0] shadow-2xs">
+                <Key className="w-4 h-4" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-[14px] font-semibold text-[#0B0C0E] truncate">
+                <h3 className="text-[13.5px] font-semibold text-[#0B0C0E] truncate">
                   Konfigurasi WhatsApp & Password Admin
                 </h3>
                 <p className="text-[11px] text-[#6B7280] truncate">
-                  Ubah link broadcast dan perbarui kata sandi admin
+                  Ubah tautan grup WA dan perbarui kata sandi admin
                 </p>
               </div>
             </div>
 
-            <div className="w-7 h-7 rounded-[6px] border border-[#E5E7EB] bg-white flex items-center justify-center text-[#6B7280] shrink-0 ml-2">
-              {isConfigExpanded ? (
-                <ChevronUp className="w-4 h-4 text-[#0B0C0E]" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
-              )}
+            <div className="shrink-0 ml-2">
+              <ChevronDown 
+                className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${
+                  isConfigExpanded ? 'rotate-180 text-[#0B0C0E]' : ''
+                }`} 
+              />
             </div>
-          </button>
+          </div>
 
-          {/* Form Body (Hanya terlihat jika dibuka) */}
+          {/* Form Body */}
           {isConfigExpanded && (
-            <form onSubmit={handleSaveAppConfig} className="p-4 pt-3 space-y-4 border-t border-[#E5E7EB]">
+            <form onSubmit={handleSaveAppConfig} className="p-4 pt-3.5 space-y-3.5 border-t border-[#E5E7EB] bg-[#FAFAFA]/40">
               {/* Link Grup WA */}
               <div className="space-y-1">
                 <label className="block text-[12px] font-medium text-[#0B0C0E] flex items-center gap-1.5">
@@ -593,7 +584,7 @@ export default function SettingsPage() {
                     placeholder="Password baru (kosongkan jika tidak diubah)"
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                    className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                   />
                   <button
                     type="button"
@@ -611,7 +602,7 @@ export default function SettingsPage() {
                       placeholder="Konfirmasi password baru"
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
-                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                      className="w-full h-9 pl-3 pr-8 bg-white border border-[#E5E7EB] rounded-[6px] text-[12.5px] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                     />
                     <button
                       type="button"
@@ -628,7 +619,7 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="h-8 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-medium rounded-[6px] flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                  className="h-8.5 px-4 bg-[#F6821F] hover:bg-[#DB6E0F] active:bg-[#C25B08] text-white text-[12px] font-semibold rounded-[6px] flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>{submitting ? 'Menyimpan...' : 'Simpan Konfigurasi'}</span>
@@ -639,10 +630,10 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* 4. STATUS BACKEND & SINKRONISASI */}
-      <div className="bg-white rounded-[8px] border border-[#E5E7EB] p-4 space-y-3 shadow-cf-card">
+      {/* ── 4. STATUS KONEKSI BACKEND & SINKRONISASI ── */}
+      <div className="bg-white rounded-[10px] border border-[#E5E7EB] p-4 shadow-cf-card space-y-2.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[13px] font-medium text-[#0B0C0E]">
+          <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0B0C0E]">
             {isConnected ? (
               <CheckCircle2 className="w-4 h-4 text-[#0F9D58]" />
             ) : (
@@ -653,26 +644,26 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => loadData(true)}
-            className="h-7 px-2.5 bg-[#F6F6F7] hover:bg-[#E5E7EB] text-[#0B0C0E] rounded-[4px] border border-[#E5E7EB] text-[11px] font-medium flex items-center gap-1 transition-colors"
+            className="h-7 px-2.5 bg-[#F6F6F7] hover:bg-[#E5E7EB] text-[#0B0C0E] rounded-[5px] border border-[#E5E7EB] text-[11px] font-medium flex items-center gap-1 transition-colors shadow-2xs"
           >
             <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin text-[#F6821F]' : ''}`} />
-            <span>Sync</span>
+            <span>Sync Data</span>
           </button>
         </div>
-        <p className="text-[12px] text-[#6B7280]">
+        <p className="text-[11.5px] text-[#6B7280]">
           {isConnected
-            ? 'Terhubung dengan Google Apps Script & Google Sheets melalui Cloudflare Edge Proxy.'
+            ? 'Terhubung aman dengan Google Apps Script & Google Sheets melalui Cloudflare Edge Proxy.'
             : 'Mode Demo / Offline (Local Storage).'}
         </p>
       </div>
 
-      {/* 5. TOMBOL KELUAR ADMIN (SELALU TERLIHAT DI PALING BAWAH) */}
+      {/* ── 5. TOMBOL LOGOUT ADMIN (STANDALONE DI PALING BAWAH) ── */}
       {isAdmin && (
-        <div className="pt-2 pb-4">
+        <div className="pt-2">
           <button
             type="button"
             onClick={logout}
-            className="w-full h-10 px-4 bg-white hover:bg-[#FDF1F2] active:bg-[#FCE8EA] text-[#E5484D] hover:text-[#B9252A] border border-[#FBD2D5] rounded-[8px] text-[13px] font-semibold flex items-center justify-center gap-2 transition-all shadow-cf-card"
+            className="w-full h-10 px-4 bg-white hover:bg-[#FDF1F2] active:bg-[#FCE8EA] text-[#E5484D] hover:text-[#B9252A] border border-[#FBD2D5] rounded-[8px] text-[12.5px] font-semibold flex items-center justify-center gap-2 transition-all shadow-cf-card"
           >
             <LogOut className="w-4 h-4" />
             <span>Keluar dari Hak Akses Admin</span>
