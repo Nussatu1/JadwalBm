@@ -1,9 +1,11 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import StatusBadge from './StatusBadge';
-import { formatTanggalRingkas } from '../utils/dateUtils';
+import { formatTanggalRingkas, cleanTimeString } from '../utils/dateUtils';
 
 export default function EventCard({ event, onSelect }) {
+  const startTime = cleanTimeString(event.jam_mulai);
+
   return (
     <div 
       onClick={() => onSelect && onSelect(event)}
@@ -37,7 +39,7 @@ export default function EventCard({ event, onSelect }) {
             </span>
             <span className="text-[#D1D5DB]">•</span>
             <span className="shrink-0">
-              {event.jam_mulai ? `${event.jam_mulai} WIB` : 'Waktu menyusul'}
+              {startTime ? `${startTime} WIB` : 'Waktu menyusul'}
             </span>
             {event.lokasi_nama && (
               <>

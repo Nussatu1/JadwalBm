@@ -7,6 +7,34 @@ export const NAMA_BULAN = [
 ];
 
 /**
+ * Normalisasi string tanggal dari format apapun (YYYY-MM-DD, ISO string, atau Date string "Fri Aug 21 2026...")
+ */
+export function parseAnyDate(dateVal) {
+  if (!dateVal) return null;
+  const str = String(dateVal).trim();
+  if (!str) return null;
+
+  // 1. Format YYYY-MM-DD
+  const ymdMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (ymdMatch) {
+    const y = parseInt(ymdMatch[1], 10);
+    const m = parseInt(ymdMatch[2], 10) - 1;
+    const d = parseInt(ymdMatch[3], 10);
+    return new Date(y, m, d);
+  }
+
+  // 2. Format standar Date JavaScript (misal "Fri Aug 21 2026 00:00:00 GMT...")
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return d;
+    }
+  } catch (e) {}
+
+  return null;
+}
+
+/**
  * Membersihkan format jam jika Google Sheets mengembalikannya sebagai objek Date (misal: "Sat Dec 30 1899 09:00:00...")
  */
 export function cleanTimeString(timeVal) {
@@ -36,44 +64,30 @@ export function cleanTimeString(timeVal) {
 }
 
 /**
- * Format tanggal YYYY-MM-DD ke format lokal Indonesia: "Senin, 24 Agustus 2026"
+ * Format tanggal YYYY-MM-DD / Date String ke format lokal Indonesia: "Jumat, 21 Agustus 2026"
  */
 export function formatTanggalIndo(dateStr) {
   if (!dateStr) return '-';
-  try {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      const date = new Date(year, month, day);
-      
-      const hari = NAMA_HARI[date.getDay()];
-      const bulan = NAMA_BULAN[month];
-      return `${hari}, ${day} ${bulan} ${year}`;
-    }
-    const d = new Date(dateStr);
-    return `${NAMA_HARI[d.getDay()]}, ${d.getDate()} ${NAMA_BULAN[d.getMonth()]} ${d.getFullYear()}`;
-  } catch (e) {
-    return dateStr;
-  }
+  const d = parseAnyDate(dateStr);
+  if (!d) return String(dateStr);
+  const hari = NAMA_HARI[d.getDay()];
+  const day = d.getDate();
+  const bulan = NAMA_BULAN[d.getMonth()];
+  const year = d.getFullYear();
+  return `${hari}, ${day} ${bulan} ${year}`;
 }
 
 /**
- * Format tanggal ringkas: "24 Agu 2026"
+ * Format tanggal ringkas: "21 Agu 2026"
  */
 export function formatTanggalRingkas(dateStr) {
   if (!dateStr) return '-';
-  try {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const monthShort = NAMA_BULAN[parseInt(parts[1], 10) - 1].substring(0, 3);
-      return `${parseInt(parts[2], 10)} ${monthShort} ${parts[0]}`;
-    }
-    return dateStr;
-  } catch (e) {
-    return dateStr;
-  }
+  const d = parseAnyDate(dateStr);
+  if (!d) return String(dateStr);
+  const day = d.getDate();
+  const monthShort = NAMA_BULAN[d.getMonth()].substring(0, 3);
+  const year = d.getFullYear();
+  return `${day} ${monthShort} ${year}`;
 }
 
 /**
@@ -108,11 +122,13 @@ export function isEventUpcomingOrLive(event, hoursWindow = 48) {
     return { isLive: false, isUpcoming: false, hoursLeft: null };
   }
 
+  const d = parseAnyDate(event.tanggal);
+  if (!d) return { isLive: false, isUpcoming: false, hoursLeft: null };
+
   const now = new Date();
-  const dateParts = event.tanggal.split('-');
-  const eventYear = parseInt(dateParts[0], 10);
-  const eventMonth = parseInt(dateParts[1], 10) - 1;
-  const eventDay = parseInt(dateParts[2], 10);
+  const eventYear = d.getFullYear();
+  const eventMonth = d.getMonth();
+  const eventDay = d.getDate();
 
   const startClean = cleanTimeString(event.jam_mulai);
   let startHour = 0, startMin = 0;
