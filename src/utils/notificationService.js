@@ -73,15 +73,23 @@ export async function subscribeUserToPush() {
 
     return { success: true, subscription: subJson, data: resData };
   } catch (e) {
-    console.error('subscribeUserToPush error:', e);
-    return { 
-      success: false, 
-      message: e.name === 'AbortError' 
-        ? 'Layanan Push Google/Browser sedang sibuk. Silakan coba klik tombol Daftarkan lagi.' 
-        : e.message 
+    // AbortError di browser PC/Laptop adalah keterbatasan Chrome Desktop (bukan bug kode)
+    // Push subscription hanya berfungsi penuh di HP Android/iOS
+    if (e.name === 'AbortError' || e.name === 'NotSupportedError') {
+      console.info('[Push] Tidak dapat mendaftar push di browser ini (Chrome PC tanpa sesi Google aktif):', e.message);
+      return {
+        success: false,
+        message: 'Push notification tidak tersedia di browser PC ini. Gunakan Chrome di HP Android untuk mendaftar notifikasi push.'
+      };
+    }
+    console.warn('subscribeUserToPush:', e.name, e.message);
+    return {
+      success: false,
+      message: e.message
     };
   }
 }
+
 
 export async function broadcastTestNotificationToAll(title, body) {
   try {

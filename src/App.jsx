@@ -44,12 +44,18 @@ export default function App() {
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Auto-register Push Subscription if permission is already granted (with brief settle delay)
+  // Auto-register Push Subscription only on mobile (avoids Chrome PC AbortError from FCM desktop service)
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (
+      isMobile &&
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      Notification.permission === 'granted'
+    ) {
       const timer = setTimeout(() => {
         subscribeUserToPush().catch(() => {});
-      }, 1500);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, []);

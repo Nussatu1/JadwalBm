@@ -167,6 +167,10 @@ function doPost(e) {
         result = handleSavePushSubscription(payload.subscription, payload.userAgent);
         break;
 
+      case 'removeExpiredPushSubscription':
+        result = handleRemoveExpiredSubscription(payload.endpoint);
+        break;
+
       default:
         result = {
           success: false,
@@ -743,6 +747,36 @@ function handleGetPushSubscribers() {
   }
   return { success: true, data: subscribers };
 }
+
+/**
+ * Hapus subscriber yang tokennya sudah kedaluwarsa (HTTP 410 Gone dari FCM)
+ */
+function handleRemoveExpiredSubscription(endpoint) {
+  if (!endpoint) {
+    return { success: false, message: 'Endpoint tidak disertakan.' };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('PushSubscribers');
+  if (!sheet || sheet.getLastRow() <= 1) {
+    return { success: false, message: 'Sheet PushSubscribers tidak ditemukan atau kosong.' };
+  }
+
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0] === endpoint) {
+      // Tandai sebagai Expired — jangan hapus baris agar audit log tetap ada
+      sheet.getRange(i + 1, 6).setValue('Expired');
+      sheet.getRange(i + 1, 5).setValue(new Date().toISOString());
+      Logger.log('Subscriber expired dihapus: ' + endpoint.slice(0, 60));
+      return { success: true, message: 'Subscriber kedaluwarsa berhasil ditandai Expired.' };
+    }
+  }
+
+  return { success: false, message: 'Endpoint tidak ditemukan di database.' };
+}
+
+
 
 /**
  * -------------------------------------------------------------

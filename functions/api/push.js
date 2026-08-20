@@ -138,6 +138,8 @@ export async function onRequest(context) {
       const payload = await request.json().catch(() => ({}));
       const title = payload.title || '📢 Tes Broadcast: Jadwal Bakid Multimedia';
       const body = payload.body || 'Uji coba transmisi notifikasi serentak ke seluruh tim multimedia.';
+      const icon = payload.icon || '/icon-192.png';
+      const url = payload.url || '/';
 
       // Get subscribers from Google Sheets
       const gasRes = await fetch(`${gasUrl}?action=getPushSubscribers`, {
@@ -147,12 +149,21 @@ export async function onRequest(context) {
       const gasData = await gasRes.json().catch(() => ({ data: [] }));
       const subscribers = Array.isArray(gasData.data) ? gasData.data : [];
 
+      // Filter out mock / test tokens — only real FCM/APNs endpoints
+      const realSubs = subscribers.filter(s =>
+        s && s.endpoint &&
+        (s.endpoint.includes('fcm.googleapis.com') || s.endpoint.includes('web.push.apple.com') || s.endpoint.includes('push.services.mozilla.com')) &&
+        !s.endpoint.includes('mock_token') &&
+        !s.endpoint.includes('test_audit')
+      );
+
       let successCount = 0;
       let failCount = 0;
       const results = [];
+      const expiredEndpoints = [];
 
       // Dispatch Web Push to each subscriber endpoint
-      const pushPromises = subscribers.map(async (sub) => {
+      const pushPromises = realSubs.map(async (sub) => {
         if (!sub || !sub.endpoint) return;
         try {
           const endpointUrl = new URL(sub.endpoint);
@@ -165,21 +176,27 @@ export async function onRequest(context) {
               'TTL': '86400',
               'Urgency': 'high',
               'Authorization': `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
-              'Content-Type': 'text/plain;charset=UTF-8'
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
               title,
               body,
+              icon,
+              url,
               tag: 'broadcast-' + Date.now()
             })
           });
 
           if (pushRes.status === 201 || pushRes.status === 200) {
             successCount++;
-            results.push({ endpoint: sub.endpoint.slice(0, 35) + '...', status: pushRes.status });
+            results.push({ endpoint: sub.endpoint.slice(0, 40) + '...', status: pushRes.status });
           } else {
             failCount++;
-            results.push({ endpoint: sub.endpoint.slice(0, 35) + '...', status: pushRes.status });
+            results.push({ endpoint: sub.endpoint.slice(0, 40) + '...', status: pushRes.status });
+            // FCM returns 404 or 410 when token is expired/revoked
+            if (pushRes.status === 404 || pushRes.status === 410) {
+              expiredEndpoints.push(sub.endpoint);
+            }
           }
         } catch (err) {
           failCount++;
@@ -188,13 +205,27 @@ export async function onRequest(context) {
 
       await Promise.all(pushPromises);
 
+      // Auto-cleanup expired endpoints from GAS sheet (fire and forget)
+      if (expiredEndpoints.length > 0) {
+        const cleanupPromises = expiredEndpoints.map(endpoint =>
+          fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            redirect: 'follow',
+            body: JSON.stringify({ action: 'removeExpiredPushSubscription', endpoint })
+          }).catch(() => {})
+        );
+        await Promise.all(cleanupPromises);
+      }
+
+      const totalReal = realSubs.length;
       return new Response(
         JSON.stringify({
           success: true,
-          message: subscribers.length === 0 
-            ? 'Belum ada perangkat anggota yang terdaftar di sheet PushSubscribers. Buka web di HP anggota dan aktifkan notifikasi terlebih dahulu.'
-            : `Sinyal notifikasi dikirim ke ${subscribers.length} perangkat (${successCount} berhasil terkirim, ${failCount} gagal/offline).`,
-          stats: { total: subscribers.length, success: successCount, failed: failCount },
+          message: totalReal === 0
+            ? 'Belum ada perangkat HP anggota yang terdaftar. Buka web di HP anggota, aktifkan izin notifikasi, dan tekan tombol "Daftarkan HP Ini".'
+            : `Sinyal notifikasi dikirim ke ${totalReal} perangkat (${successCount} berhasil, ${failCount} gagal, ${expiredEndpoints.length} token kedaluwarsa dibersihkan).`,
+          stats: { total: totalReal, success: successCount, failed: failCount, expired_cleaned: expiredEndpoints.length },
           details: results
         }),
         { headers: corsHeaders }
