@@ -229,10 +229,21 @@ function ensureSheetsInitialized() {
  */
 function handleValidatePassword(inputHash) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetConfig = ss.getSheetByName(SHEET_NAMES.CONFIG);
+  let sheetConfig = ss.getSheetByName(SHEET_NAMES.CONFIG);
   
+  // Auto-inisialisasi sheet Config jika belum ada atau belum ada baris data
   if (!sheetConfig || sheetConfig.getLastRow() < 2) {
-    return { success: false, message: 'Sheet config belum siap.', data: null };
+    if (!sheetConfig) {
+      sheetConfig = ss.insertSheet(SHEET_NAMES.CONFIG);
+    }
+    if (sheetConfig.getLastRow() < 1) {
+      sheetConfig.appendRow(CONFIG_HEADERS);
+    }
+    if (sheetConfig.getLastRow() < 2) {
+      const defaultHash = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
+      const defaultWa = 'https://chat.whatsapp.com/FOzKACYSO91BH9QLznPUt2';
+      sheetConfig.appendRow([defaultHash, defaultWa]);
+    }
   }
 
   // Jika input berupa plain text pendek (fallback), hash dulu ke SHA-256
@@ -241,7 +252,12 @@ function handleValidatePassword(inputHash) {
     computedHash = computeSHA256(inputHash);
   }
 
-  const storedHash = String(sheetConfig.getRange(2, 1).getValue()).trim();
+  let storedHash = String(sheetConfig.getRange(2, 1).getValue()).trim();
+
+  // Jika sel A2 diisi plain text oleh admin di spreadsheet, hash nilainya
+  if (storedHash && storedHash.length < 64) {
+    storedHash = computeSHA256(storedHash);
+  }
 
   if (computedHash === storedHash) {
     // Generate server-side signed simple token (valid hash match)
