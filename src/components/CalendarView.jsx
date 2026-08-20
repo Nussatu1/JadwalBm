@@ -7,7 +7,7 @@ import {
   MapPin, 
   ChevronRight as ChevronRightIcon
 } from 'lucide-react';
-import { NAMA_BULAN, formatTanggalIndo, formatJam } from '../utils/dateUtils';
+import { NAMA_BULAN, formatTanggalIndo, formatJam, parseAnyDate } from '../utils/dateUtils';
 import { useEvents } from '../context/EventContext';
 import StatusBadge from './StatusBadge';
 
@@ -52,8 +52,12 @@ export default function CalendarView({ onSelectEvent }) {
     const map = {};
     events.forEach(e => {
       if (e.tanggal) {
-        if (!map[e.tanggal]) map[e.tanggal] = [];
-        map[e.tanggal].push(e);
+        const d = parseAnyDate(e.tanggal);
+        if (d) {
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          if (!map[key]) map[key] = [];
+          map[key].push(e);
+        }
       }
     });
     return map;
