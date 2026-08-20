@@ -117,15 +117,15 @@ export default function SettingsPage() {
 
   const handleBroadcastTest = async () => {
     setBroadcastLoading(true);
-    // Also trigger local device sound/notification
-    showSystemNotification(
-      '📢 Tes Siaran: Jadwal Bakid Multimedia',
-      'Sinyal tes notifikasi serentak disiarkan ke seluruh perangkat terdaftar!'
-    );
     const res = await broadcastTestNotificationToAll();
     setBroadcastLoading(false);
     if (res.success) {
-      showToast('Sinyal tes disiarkan ke seluruh anggota!', 'success');
+      showToast(res.message || 'Sinyal tes disiarkan ke seluruh anggota!', 'success');
+      // Also show locally
+      showSystemNotification(
+        '📢 Tes Siaran: Jadwal Bakid Multimedia',
+        'Sinyal tes notifikasi serentak disiarkan ke seluruh perangkat terdaftar.'
+      );
     } else {
       showToast(res.message || 'Gagal menyiarkan tes notifikasi', 'error');
     }

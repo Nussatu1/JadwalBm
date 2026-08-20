@@ -6,6 +6,7 @@
 const VAPID_PUBLIC_KEY = 'BLjGf9tE-tULNS-2Do6COan2IrUi2YNDMnjB4AkrSyK7Mw8I2b7nW0UKwC91LvNQh5BI5_JKviMZ3pQUysDsOSg';
 const VAPID_PRIVATE_KEY = 'epz8Ss6_J0tSEZnxjZP9t4_bknYqIuvCzcRX6DAA7Jo';
 const VAPID_SUBJECT = 'mailto:multimedia@miftahululum.org';
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbw6_Ijo6Hu2XmyQ-6DYahv_Jr42S4BktcRtZLHnJpR6sEsQY9vJS6wlLld09aii4mNJTw/exec';
 
 function base64UrlToUint8Array(b64url) {
   let base64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
@@ -86,7 +87,7 @@ export async function onRequest(context) {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const gasUrl = env.VITE_GAS_URL || 'https://script.google.com/macros/s/AKfycbw6_Ijo6Hu2XmyQ-6DYahv_Jr42S4BktcRtZLHnJpR6sEsQY9vJS6wlLld09aii4mNJTw/exec';
+  const gasUrl = env.VITE_GAS_API_URL || env.VITE_GAS_URL || DEFAULT_GAS_URL;
 
   // 1. Get VAPID Public Key
   if (action === 'vapidPublicKey') {
@@ -101,18 +102,26 @@ export async function onRequest(context) {
     try {
       const subscription = await request.json();
 
-      await fetch(`${gasUrl}?action=savePushSubscription`, {
+      const gasRes = await fetch(gasUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        redirect: 'follow',
         body: JSON.stringify({
+          action: 'savePushSubscription',
           subscription,
           userAgent: request.headers.get('user-agent') || '',
           timestamp: new Date().toISOString()
         })
-      }).catch((err) => console.warn('GAS subscribe error:', err));
+      });
+
+      const resText = await gasRes.text();
+      let resJson = { success: true };
+      try {
+        resJson = JSON.parse(resText);
+      } catch (e) {}
 
       return new Response(
-        JSON.stringify({ success: true, message: 'Push subscription tersimpan.' }),
+        JSON.stringify({ success: true, message: 'Push subscription tersimpan.', data: resJson }),
         { headers: corsHeaders }
       );
     } catch (e) {
@@ -131,16 +140,20 @@ export async function onRequest(context) {
       const body = payload.body || 'Uji coba transmisi notifikasi serentak ke seluruh tim multimedia.';
 
       // Get subscribers from Google Sheets
-      const gasRes = await fetch(`${gasUrl}?action=getPushSubscribers`);
+      const gasRes = await fetch(`${gasUrl}?action=getPushSubscribers`, {
+        headers: { 'Accept': 'application/json' },
+        redirect: 'follow'
+      });
       const gasData = await gasRes.json().catch(() => ({ data: [] }));
       const subscribers = Array.isArray(gasData.data) ? gasData.data : [];
 
       let successCount = 0;
       let failCount = 0;
+      const results = [];
 
       // Dispatch Web Push to each subscriber endpoint
       const pushPromises = subscribers.map(async (sub) => {
-        if (!sub.endpoint) return;
+        if (!sub || !sub.endpoint) return;
         try {
           const endpointUrl = new URL(sub.endpoint);
           const audience = `${endpointUrl.protocol}//${endpointUrl.host}`;
@@ -163,8 +176,10 @@ export async function onRequest(context) {
 
           if (pushRes.status === 201 || pushRes.status === 200) {
             successCount++;
+            results.push({ endpoint: sub.endpoint.slice(0, 35) + '...', status: pushRes.status });
           } else {
             failCount++;
+            results.push({ endpoint: sub.endpoint.slice(0, 35) + '...', status: pushRes.status });
           }
         } catch (err) {
           failCount++;
@@ -176,8 +191,11 @@ export async function onRequest(context) {
       return new Response(
         JSON.stringify({
           success: true,
-          message: `Sinyal notifikasi berhasil dikirimkan ke ${successCount} perangkat terdaftar! (${failCount} gagal/offline)`,
-          stats: { total: subscribers.length, success: successCount, failed: failCount }
+          message: subscribers.length === 0 
+            ? 'Belum ada perangkat anggota yang terdaftar di sheet PushSubscribers. Buka web di HP anggota dan aktifkan notifikasi terlebih dahulu.'
+            : `Sinyal notifikasi dikirim ke ${subscribers.length} perangkat (${successCount} berhasil terkirim, ${failCount} gagal/offline).`,
+          stats: { total: subscribers.length, success: successCount, failed: failCount },
+          details: results
         }),
         { headers: corsHeaders }
       );
