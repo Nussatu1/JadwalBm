@@ -91,21 +91,39 @@ export default function TimePicker({
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      {label && (
-        <label className="block text-[12px] font-medium text-[#0B0C0E] mb-1">
-          {label} {required && <span className="text-[#E5484D]">*</span>}
-        </label>
-      )}
+      {/* Header: Label + Quick Selesai Badge/Button */}
+      <div className="flex items-center justify-between mb-1">
+        {label ? (
+          <label className="block text-[12px] font-medium text-[#0B0C0E] dark:text-slate-200">
+            {label} {required && <span className="text-[#E5484D]">*</span>}
+          </label>
+        ) : <div />}
+
+        {allowSelesai && (
+          <button
+            type="button"
+            onClick={handleSelectSelesai}
+            className={`text-[11px] px-2 py-0.5 rounded-[5px] border transition-all cursor-pointer select-none flex items-center gap-1 active:scale-95 ${
+              isSelesai
+                ? 'bg-[#EBF9F1] border-[#B7EBD0] text-[#0F9D58] font-bold shadow-2xs'
+                : 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-semibold hover:bg-[#FFE8CC]'
+            }`}
+          >
+            <span>✨ Selesai</span>
+            {isSelesai && <Check className="w-3 h-3 text-[#0F9D58]" />}
+          </button>
+        )}
+      </div>
 
       {/* Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-9 px-3 bg-white border border-[#E5E7EB] rounded-[6px] text-[13px] text-left flex items-center justify-between gap-2 transition-colors ${
+        className={`w-full h-9 px-3 bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-700 rounded-[6px] text-[13px] text-left flex items-center justify-between gap-2 transition-colors ${
           isOpen ? 'border-[#F6821F] ring-1 ring-[#F6821F]' : 'hover:border-[#D1D5DB]'
         }`}
       >
-        <span className={`truncate ${value ? 'text-[#0B0C0E] font-medium' : 'text-[#9CA3AF]'}`}>
+        <span className={`truncate ${value ? 'text-[#0B0C0E] dark:text-slate-100 font-medium' : 'text-[#9CA3AF]'}`}>
           {isSelesai ? (
             <span className="inline-flex items-center gap-1 text-[#0F9D58] font-bold">
               <Check className="w-3.5 h-3.5" /> Selesai
@@ -121,16 +139,16 @@ export default function TimePicker({
 
       {/* Time Picker Popover */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 left-0 sm:left-auto right-0 sm:w-64 bg-white border border-[#E5E7EB] rounded-[8px] shadow-cf-dropdown p-3 animate-cf-modal">
+        <div className="absolute z-50 mt-1 left-0 right-0 sm:left-auto sm:right-0 sm:w-64 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-700 rounded-[8px] shadow-cf-dropdown p-3 animate-cf-modal">
           {/* Quick presets */}
           <div className="mb-2.5">
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-[#6B7280] mb-1">Pilihan Cepat</p>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-[#6B7280] dark:text-slate-400 mb-1">Pilihan Cepat</p>
             <div className="flex flex-wrap gap-1">
               {allowSelesai && (
                 <button
                   type="button"
                   onClick={handleSelectSelesai}
-                  className={`text-[11px] px-2 py-0.5 rounded-[4px] border transition-colors ${
+                  className={`text-[11px] px-2 py-0.5 rounded-[4px] border transition-colors cursor-pointer ${
                     isSelesai
                       ? 'bg-[#EBF9F1] border-[#B7EBD0] text-[#0F9D58] font-bold'
                       : 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-semibold hover:bg-[#FFE8CC]'
@@ -144,10 +162,10 @@ export default function TimePicker({
                   type="button"
                   key={p}
                   onClick={() => handlePresetSelect(p)}
-                  className={`text-[11px] px-1.5 py-0.5 rounded-[4px] border transition-colors ${
+                  className={`text-[11px] px-1.5 py-0.5 rounded-[4px] border transition-colors cursor-pointer ${
                     value === p
                       ? 'bg-[#FFF5EA] border-[#FBD6B0] text-[#DB6E0F] font-semibold'
-                      : 'bg-[#F6F6F7] border-[#E5E7EB] text-[#374151] hover:bg-[#E5E7EB]'
+                      : 'bg-[#F6F6F7] dark:bg-slate-800 border-[#E5E7EB] dark:border-slate-700 text-[#374151] dark:text-slate-200 hover:bg-[#E5E7EB]'
                   }`}
                 >
                   {p}

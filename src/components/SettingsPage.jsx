@@ -356,59 +356,64 @@ export default function SettingsPage() {
               </div>
 
               {/* Pusat Uji Coba & Sinkronisasi */}
-              <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
-                <span className="text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider">
-                  Pusat Uji Coba & Sinkronisasi
-                </span>
+              <div className="pt-3 border-t border-[#E5E7EB] space-y-2">
+                <p className="text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider">
+                  Uji Coba &amp; Sinkronisasi
+                </p>
 
                 {/* Quick Action Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
+                  {/* 1. Daftar HP */}
                   <button
                     type="button"
                     onClick={handleSyncPushToken}
                     disabled={syncingPush}
-                    className="h-8.5 px-3 bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] text-[#DB6E0F] border border-[#FBD6B0] text-[11.5px] font-medium rounded-[6px] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                    className="h-9 px-1.5 rounded-[8px] border border-[#FBD6B0] bg-[#FFF5EA] hover:bg-[#FFE8CC] active:bg-[#FBD6B0] active:scale-[0.97] text-[#DB6E0F] flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 select-none"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${syncingPush ? 'animate-spin text-[#F6821F]' : 'text-[#F6821F]'}`} />
-                    <span>{syncingPush ? 'Mendaftarkan...' : 'Daftarkan HP Ini'}</span>
+                    <RefreshCw className={`w-3.5 h-3.5 shrink-0 text-[#F6821F] ${syncingPush ? 'animate-spin' : ''}`} />
+                    <span className="text-[11px] font-semibold truncate">
+                      {syncingPush ? 'Mendaftar...' : 'Daftar HP'}
+                    </span>
                   </button>
 
+                  {/* 2. Tes Audio */}
                   <button
                     type="button"
                     onClick={() => {
                       playCustomAudioNotification();
                       showToast('Memutar suara notif.mp3 🔊', 'info');
                     }}
-                    className="h-8.5 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[11.5px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                    className="h-9 px-1.5 rounded-[8px] border border-[#E5E7EB] bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] active:scale-[0.97] text-[#374151] flex items-center justify-center gap-1.5 transition-all select-none"
                   >
-                    <Volume2 className="w-3.5 h-3.5 text-[#0F9D58]" />
-                    <span>Tes Audio</span>
+                    <Volume2 className="w-3.5 h-3.5 shrink-0 text-[#0F9D58]" />
+                    <span className="text-[11px] font-medium truncate">Tes Audio</span>
                   </button>
 
+                  {/* 3. Tes Notif */}
                   <button
                     type="button"
                     onClick={handleTestNotification}
-                    className="h-8.5 px-3 bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] text-[#0B0C0E] text-[11.5px] font-medium rounded-[6px] border border-[#E5E7EB] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                    className="h-9 px-1.5 rounded-[8px] border border-[#E5E7EB] bg-white hover:bg-[#F6F6F7] active:bg-[#E5E7EB] active:scale-[0.97] text-[#374151] flex items-center justify-center gap-1.5 transition-all select-none"
                   >
-                    <Send className="w-3.5 h-3.5 text-[#2E7DD1]" />
-                    <span>Tes di HP Ini</span>
+                    <Send className="w-3.5 h-3.5 shrink-0 text-[#2E7DD1]" />
+                    <span className="text-[11px] font-medium truncate">Tes Notif</span>
                   </button>
                 </div>
 
                 {/* Admin Broadcast Button */}
                 {isAdmin && (
-                  <div className="pt-1.5 space-y-1">
+                  <div className="space-y-1">
                     <button
                       type="button"
                       onClick={handleBroadcastTest}
                       disabled={broadcastLoading}
-                      className="w-full h-9.5 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] text-white text-[12px] font-semibold rounded-[6px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-cf-card"
+                      className="w-full h-9 px-4 bg-[#0B0C0E] hover:bg-[#27272A] active:bg-[#18181B] active:scale-[0.99] text-white text-[11.5px] font-semibold rounded-[8px] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                     >
-                      <Radio className={`w-4 h-4 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
-                      <span>{broadcastLoading ? 'Menyiarkan ke Seluruh Perangkat...' : 'Siarkan Tes Notifikasi ke Semua Anggota'}</span>
+                      <Radio className={`w-3.5 h-3.5 text-[#F6821F] ${broadcastLoading ? 'animate-pulse' : ''}`} />
+                      <span>{broadcastLoading ? 'Menyiarkan...' : 'Siarkan Tes ke Semua Anggota'}</span>
                     </button>
                     <p className="text-[10.5px] text-[#6B7280] text-center">
-                      Mengirim sinyal push serentak ke semua perangkat yang terdaftar di server.
+                      Mengirim push serentak ke semua perangkat terdaftar.
                     </p>
                   </div>
                 )}
