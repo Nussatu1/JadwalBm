@@ -1,6 +1,6 @@
 // Service Worker — Jadwal Acara Bakid Multimedia PWA
-// v3: Push handler robust, audio fix, cache cleanup
-const CACHE_NAME = 'jadwal-bm-v3';
+// v4: Stale-While-Revalidate — update langsung tersedia di buka berikutnya
+const CACHE_NAME = 'jadwal-bm-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -19,6 +19,7 @@ self.addEventListener('install', (event) => {
       .then((cache) => cache.addAll(STATIC_ASSETS))
       .catch((err) => console.warn('[SW] Cache install partial error:', err))
   );
+  // skipWaiting: SW baru langsung aktif tanpa tunggu tab lama ditutup
   self.skipWaiting();
 });
 
@@ -36,7 +37,9 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ─── Fetch: Cache-first untuk aset statis, bypass untuk API ──────────────────
+// ─── Fetch: Stale-While-Revalidate ───────────────────────────────────────────
+// Serve dari cache dulu (cepat), update cache di background.
+// Sehingga pengguna selalu dapat versi terbaru di buka berikutnya.
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
@@ -51,22 +54,23 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cached = await cache.match(event.request);
 
-      return fetch(event.request)
+      // Fetch dari network di background — selalu update cache
+      const networkFetch = fetch(event.request)
         .then((res) => {
-          if (!res || res.status !== 200 || res.type !== 'basic') {
-            return res;
+          if (res && res.status === 200 && res.type === 'basic') {
+            cache.put(event.request, res.clone());
           }
-          // Clone respons secara synchronous sebelum di-return
-          const responseToCache = res.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
           return res;
         })
-        .catch(() => cached);
+        .catch(() => null);
+
+      // Stale-While-Revalidate:
+      // - Ada cache → langsung return cache, network update di background
+      // - Tidak ada cache → tunggu network
+      return cached || networkFetch;
     })
   );
 });
